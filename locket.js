@@ -50,11 +50,11 @@ if (ua.includes("Locket")) {
             tag: "LOCKET GOLD",
             tag_gradient: true,
             tag_style: "gold_gradient",
-            title: "CAUTION: HACKED",
+            title: "KHUNG MẶC ĐỊNH,CF 45S",
             feature_set: [
                 {
-                    title: "PhuInvisible",
-                    body: "I alway tell the truth, even when I lie.",
+                    title: "🤍🤍🤍🤍🤍🤍🤍🤍🤍🤍",
+                    body: "💛💛💛💛💛💛💛💛💛💛",
                     imageURL: "https://i.ibb.co/xkJMqKn/photo-2026-10-16-15-31-19.png"
                 
                 }
