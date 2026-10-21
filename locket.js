@@ -50,12 +50,12 @@ if (ua.includes("Locket")) {
             tag: "LOCKET GOLD",
             tag_gradient: true,
             tag_style: "gold_gradient",
-            title: "HACKED SUCCESSFULLY",
+            title: "CAUTION: HACKED",
             feature_set: [
                 {
-                    title: "Phu Invisible",
-                    body: "I always tell the truth even when I lie",
-                    imageURL: "https://photobucket.com/share/11f3140d-fced-4aeb-92a9-5c8fdcec4e66"
+                    title: "🤍🤍🤍🤍🤍🤍🤍🤍🤍🤍",
+                    body: "💛💛💛💛💛💛💛💛💛💛",
+                    imageURL: "https://ibb.co/cSFHBxgq"
                 
                 }
             ],
