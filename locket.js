@@ -53,9 +53,9 @@ if (ua.includes("Locket")) {
             title: "CAUTION: HACKED",
             feature_set: [
                 {
-                    title: "🤍🤍🤍🤍🤍🤍🤍🤍🤍🤍",
-                    body: "💛💛💛💛💛💛💛💛💛💛",
-                    imageURL: "https://ibb.co/cSFHBxgq"
+                    title: "PhuInvisible",
+                    body: "I alway tell the truth, even when I lie.",
+                    imageURL: "https://i.ibb.co/xkJMqKn/photo-2026-10-16-15-31-19.png"
                 
                 }
             ],
