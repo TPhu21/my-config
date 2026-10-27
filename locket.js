@@ -1,7 +1,7 @@
 // ============================================================
 // Locket Remote Config Rewrite
 // Dùng cho: Loon / Quantumult X / Surge / Shadowrocket
-// cre: DINH DUY VINH 09
+// cre dinhduyvinh09
 // ============================================================
 
 var ua = $request.headers["User-Agent"] || $request.headers["user-agent"] || "";
@@ -50,10 +50,10 @@ if (ua.includes("Locket")) {
             tag: "LOCKET GOLD",
             tag_gradient: true,
             tag_style: "gold_gradient",
-            title: "KHUNG MẶC ĐỊNH,CF 45S",
+            title: "Thank you for using Locket Gold!",
             feature_set: [
                 {
-                    title: "🤍🤍🤍🤍🤍🤍🤍🤍🤍🤍",
+                    title: "Caution",
                     body: "💛💛💛💛💛💛💛💛💛💛",
                     imageURL: "https://i.ibb.co/xkJMqKn/photo-2026-10-16-15-31-19.png"
                 
@@ -111,8 +111,8 @@ if (ua.includes("Locket")) {
         telephoto: true,
         srgb: true,
         lanczos: true,
-        quality_mbps: 0.6,
-        qualityMbps: 0.6
+        quality_mbps: 0.9,
+        qualityMbps: 0.9
     };
 
     var cameraRollConfig = {
@@ -129,8 +129,8 @@ if (ua.includes("Locket")) {
         max_file_size: 104857600,       // Cho phép file tối đa 100MB từ thư viện
         max_upload_bytes: 104857600,   // Nới lỏng giới hạn dung lượng tải lên
         max_size_bytes: 104857600,
-        quality_mbps: 0.6,
-        qualityMbps: 0.6,
+        quality_mbps: 0.9,
+        qualityMbps: 0.9,
         flash_button: true
     };
 
@@ -184,16 +184,16 @@ if (ua.includes("Locket")) {
         goldMaxDuration: durationStr,
         max_file_size: "104857600",
         max_upload_bytes: "104857600",
-        video_quality_mbps: "0.",
+        video_quality_mbps: "0.9",
         video_sound_enabled: "true",
         microphone_enabled: "true",
         camera_microphone_enabled: "true",
         audio_session_deactivation_enabled: "true",
         zoom_enabled: "true",
         upload_main: "false",
-        upload_main_image_quality: "0.6",
+        upload_main_image_quality: "0.9",
         upload_main_image_size: "1440",
-        upload_thumbnail_image_quality: "0.6",
+        upload_thumbnail_image_quality: "0.9",
         upload_thumbnail_image_size: "1020"
     });
 
@@ -302,7 +302,7 @@ if (ua.includes("Locket")) {
         widget_sync_token_reload_mode: "clearTokenNever",
         widget_frame_event: JSON.stringify({
             uid: "midautumn_2026",
-            url: "https://hosting.photobucket.com/884f09fa-d52e-40c7-b848-0dc5b19d4288/0cb2a814-22fe-4037-9a0a-25c0fe2476f5.png",
+            url: "https://i.ibb.co/JFgZsnvc/611548aa-b2b9-44c6-aacf-d6ead8fd6d42.png",
             use_local_time_zone: true,
             placement: "below",
             start_at: "2020-01-01T00:00:00",
