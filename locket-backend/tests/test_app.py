@@ -56,8 +56,32 @@ def test_api_key(monkeypatch):
     assert with_key.status_code == 200
 
 
-def test_ai_missing_package_returns_503():
+def test_ai_missing_package_returns_503(monkeypatch):
+    import builtins
+
+    original_import = builtins.__import__
+
+    def without_rembg(name, *args, **kwargs):
+        if name == "rembg":
+            raise ImportError("Optional AI dependency not installed")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", without_rembg)
     response = client.post("/api/v1/ai/remove-background", files={"file": ("a.png", image_bytes(), "image/png")})
-    # Tests run without optional rembg. Environments with the package may execute inference.
     assert response.status_code == 503
     assert "pip install" in response.json()["detail"]
+
+
+def test_ai_mock_inference(monkeypatch):
+    import sys
+    import types
+    import app as server
+
+    fake = types.ModuleType("rembg")
+    fake.remove = lambda image, session: image.convert("RGBA")
+    monkeypatch.setitem(sys.modules, "rembg", fake)
+    monkeypatch.setattr(server, "ai_session", lambda: object())
+    response = client.post("/api/v1/ai/remove-background", files={"file": ("a.png", image_bytes(), "image/png")})
+    assert response.status_code == 200
+    with Image.open(BytesIO(response.content)) as result:
+        assert result.mode == "RGBA"
