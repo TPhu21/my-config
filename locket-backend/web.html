@@ -17,7 +17,7 @@ label{display:block;font-weight:650;font-size:13px;margin:14px 0 5px}select,inpu
 .cta{font:inherit;font-weight:750;border:0;background:#6546d3;color:#fff;padding:13px 18px;border-radius:12px;cursor:pointer;width:100%;margin-top:18px}.cta:disabled{opacity:.55;cursor:wait}.note{font-size:12px;color:#77788d;margin-top:12px}
 .preview{display:flex;flex-direction:column;align-items:center;min-height:370px;justify-content:center;background:radial-gradient(circle at 10% 10%,#ede7ff,#f9f7ff 70%);border:1px dashed #d1c9ed;border-radius:14px;padding:20px}
 .preview img{max-width:100%;max-height:520px;width:auto;height:auto;object-fit:contain;border-radius:7px;box-shadow:0 12px 38px #2b174d24}
-.preview .ghost{font-size:15px;text-align:center;color:#726b88;max-width:26ch}.dl{display:inline-flex;justify-content:center;align-items:center;margin-top:16px;text-decoration:none;padding:10px 16px;background:#211c39;color:#fff;border-radius:10px;font-weight:700}.status{font-size:13px;min-height:24px;color:#6755a8;margin:12px 0}
+.preview .ghost{font-size:15px;text-align:center;color:#726b88;max-width:26ch}.share{font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin-top:16px;margin-left:8px;padding:10px 16px;background:#5740b8;color:#fff;border:0;border-radius:10px;font-weight:700}.share[hidden]{display:none}.dl{display:inline-flex;justify-content:center;align-items:center;margin-top:16px;text-decoration:none;padding:10px 16px;background:#211c39;color:#fff;border-radius:10px;font-weight:700}.status{font-size:13px;min-height:24px;color:#6755a8;margin:12px 0}
 .tags{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 20px}.tags span{background:#f0eff7;border-radius:40px;padding:5px 10px;font-size:12px;color:#67637f}
 [hidden]{display:none!important}footer{padding:25px;color:#777;text-align:center;font-size:13px;border-top:1px solid #e6e2ec}
 @media(max-width:790px){.layout{grid-template-columns:1fr}.preview{min-height:250px}}
@@ -66,6 +66,8 @@ label{display:block;font-weight:650;font-size:13px;margin:14px 0 5px}select,inpu
   <div class="preview"><p id="placeholder" class="ghost" hidden>Chọn ảnh và nhấn nút tạo để xem kết quả.</p><img id="preview-image" src="/api/v1/templates/basic/preview" alt="Xem trước ảnh Photobooth"></div>
   <p id="status" class="status" role="status"></p>
   <a id="download" class="dl" hidden download="photobooth.png">Tải ảnh PNG</a>
+  <button id="ios-share" type="button" class="share" hidden>Chia sẻ ảnh trên iPhone</button>
+  <p class="note" id="ios-guide">Trên Safari iPhone qua HTTPS, chọn <strong>Chia sẻ ảnh</strong> để mở bảng chia sẻ iOS. Locket chỉ xuất hiện nếu ứng dụng hỗ trợ nhận ảnh. Nếu không có, dùng <strong>Tải ảnh PNG</strong>, lưu vào Ảnh rồi nhập từ thư viện trong Locket nếu tài khoản của bạn hỗ trợ.</p>
   <p class="note">Không tự ý đưa token Locket hoặc ảnh riêng tư lên VPS không tin cậy. Đây là ứng dụng độc lập, không giả lập quyền thuê bao Gold.</p>
  </section>
 </div>
@@ -81,6 +83,9 @@ label{display:block;font-weight:650;font-size:13px;margin:14px 0 5px}select,inpu
  const preview = document.getElementById('preview-image');
  const status = document.getElementById('status');
  const download = document.getElementById('download');
+ const shareButton = document.getElementById('ios-share');
+ let currentImageBlob = null;
+ let currentFilename = 'photobooth.png';
  const title = document.getElementById('preview-title');
  let currentBlobUrl = null;
  function showTab(id) {
@@ -90,7 +95,7 @@ label{display:block;font-weight:650;font-size:13px;margin:14px 0 5px}select,inpu
    if(id==='booth') updatePreview(); else if(!currentBlobUrl) {
      preview.hidden=true;document.getElementById('placeholder').hidden=false;
    }
-   status.textContent='';download.hidden=true;
+   status.textContent='';download.hidden=true;shareButton.hidden=true;
  }
  for(const tab of tabs) tab.addEventListener('click',()=>showTab(tab.dataset.tab));
  function updatePreview() {
@@ -99,7 +104,7 @@ label{display:block;font-weight:650;font-size:13px;margin:14px 0 5px}select,inpu
    preview.src='/api/v1/templates/'+encodeURIComponent(id)+'/preview?layout='+encodeURIComponent(layout.value);
    preview.hidden=false;document.getElementById('placeholder').hidden=true;
  }
- for(const input of [template,layout])input.addEventListener('change',()=>{if(currentBlobUrl){URL.revokeObjectURL(currentBlobUrl);currentBlobUrl=null}updatePreview()});
+ for(const input of [template,layout])input.addEventListener('change',()=>{if(currentBlobUrl){URL.revokeObjectURL(currentBlobUrl);currentBlobUrl=null}currentImageBlob=null;shareButton.hidden=true;download.hidden=true;updatePreview()});
  async function loadCatalog(){
    try {const r=await fetch('/api/v1/catalog');if(!r.ok)throw Error('Catalog unavailable');const data=await r.json();
      for(const item of data.templates){const option=document.createElement('option');option.value=item.id;option.textContent=item.name;template.appendChild(option)}
@@ -111,17 +116,36 @@ label{display:block;font-weight:650;font-size:13px;margin:14px 0 5px}select,inpu
    const submitButton=form.querySelector('button[type=submit]');
    const payload=new FormData(form);
    if(form.id==='booth' && payload.getAll('files').filter(f=>f&&f.size).length!==4){status.textContent='Vui lòng chọn đúng 4 ảnh.';return}
-   submitButton.disabled=true;status.textContent='Đang xử lý ảnh...';download.hidden=true;
+   submitButton.disabled=true;status.textContent='Đang xử lý ảnh...';download.hidden=true;shareButton.hidden=true;currentImageBlob=null;
    const key=document.getElementById('key').value.trim();
    try {const res=await fetch(url,{method:'POST',body:payload,headers:key?{'X-API-Key':key}:{}});
      if(!res.ok){const info=await res.json().catch(()=>({}));throw Error(info.detail||('HTTP '+res.status))}
      const output=await res.blob();if(currentBlobUrl)URL.revokeObjectURL(currentBlobUrl);currentBlobUrl=URL.createObjectURL(output);
+     currentImageBlob=output;currentFilename=form.id+'-result.png';
      preview.src=currentBlobUrl;preview.hidden=false;document.getElementById('placeholder').hidden=true;
-     download.href=currentBlobUrl;download.download=form.id+'-result.png';download.hidden=false;
+     download.href=currentBlobUrl;download.download=currentFilename;download.hidden=false;
+     shareButton.hidden=!(window.isSecureContext && typeof navigator.share==='function' && typeof navigator.canShare==='function');
      status.textContent='Đã tạo ảnh PNG thành công.';
    } catch(e){status.textContent='Lỗi: '+e.message}
    finally {submitButton.disabled=false}
  }
+ shareButton.addEventListener('click',async()=>{
+   if(!currentImageBlob){status.textContent='Hãy xử lý ảnh trước khi chia sẻ.';return;}
+   if(!window.isSecureContext || typeof navigator.share!=='function' || typeof navigator.canShare!=='function'){
+     status.textContent='Bảng chia sẻ iOS cần Safari qua HTTPS. Hãy tải ảnh về thay thế.';return;
+   }
+   try {
+     const file=new File([currentImageBlob],currentFilename,{type:'image/png'});
+     if(!navigator.canShare({files:[file]})){
+       status.textContent='Trình duyệt không hỗ trợ chia sẻ ảnh. Hãy tải PNG và lưu vào Ảnh.';return;
+     }
+     await navigator.share({files:[file]});
+     status.textContent='Đã mở bảng chia sẻ iOS. Chọn Locket nếu ứng dụng xuất hiện.';
+   } catch(e){
+     if(e && e.name==='AbortError')status.textContent='Bạn đã đóng bảng chia sẻ.';
+     else status.textContent='Không chia sẻ được trực tiếp; hãy tải PNG và lưu vào Ảnh.';
+   }
+ });
  const routes={booth:'/api/v1/photobooth',filter:'/api/v1/filter',ai:'/api/v1/ai/edit',cutout:'/api/v1/ai/remove-background'};
  for(const form of modes)form.addEventListener('submit',e=>{e.preventDefault();submit(form,routes[form.id])});
  loadCatalog();
