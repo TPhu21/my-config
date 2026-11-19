@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 .env
 *.onnx
+.photo-studio-key.dpapi
+.photo-studio-pid
+.photo-studio-logs/
