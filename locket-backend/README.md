@@ -1,88 +1,156 @@
-# Private Photobooth & AI Backend (Locket-inspired)
+# Private Photo Studio — Photobooth + Local AI (FastAPI)
 
-An **independent image-processing service**, not a copy of andanh447's Worker and not an official Locket backend. No Locket credentials, cookie, access token, photos or traffic are sent to that Worker's VPS. The API processes photos in memory and returns PNG; it does not persist submitted photos.
+A **self-hosted, independent** image editing app. It does not copy the private `andanh447` Cloudflare Worker or rely on the source VPS. The `pb_*` and `stk_*` IDs are used as compatibility **labels** to help build a recognizable filter catalog; all built-in template artwork is original and generated with Pillow shapes (no trademark logos or third-party overlays).
 
-## Features (MVP)
+**Important:** This is a standalone site/API, **not an official Locket API**, does not grant Gold, and is **not automatically connected to the Locket app**. Avoid redirecting account, photo or subscription traffic to an untrusted server. A real Locket integration needs a documented or otherwise authorized API contract.
 
-| API | What it does | Requires AI model? |
-|---|---|---|
-| `GET /health` | Check server | No |
-| `GET /api/v1/catalog` | Available styles and layouts | No |
-| `POST /api/v1/filter` | Style: `classic`, `vintage`, `pastel`, `noir`, `comic` | No — conventional image processing |
-| `POST /api/v1/photobooth` | Four-photo `strip` or `grid` (2×2), optional caption and style | No |
-| `POST /api/v1/ai/remove-background` | Subject/background segmentation using **local** U2-Net via rembg | **Yes**, opt-in install |
-| `GET /` | Browser demo, upload photos and download generated PNG | No |
+## Implemented features
 
-**Important:** These endpoints do not automatically integrate with Locket's existing filter interface or unlock its paid features. `generateFilteredImage` is not implemented because Locket's private request/response contract and authorization are not validated. Using a redirect/rewrite without knowing that contract could break account, upload or image flows. The generated outputs are available through this service's own web UI/API.
+| Feature | Endpoint | Availability |
+| --- | --- | --- |
+| Health check | `GET /health` | Always |
+| Styles, layouts, template and AI effect catalog | `GET /api/v1/catalog` | Always |
+| Template list | `GET /api/v1/templates` | Always |
+| Preview a template without uploads | `GET /api/v1/templates/{id}/preview?layout=strip` | Always |
+| Filter JPEG/PNG/WebP | `POST /api/v1/filter` | Always |
+| Photobooth, four photos and 11 templates | `POST /api/v1/photobooth` | Always |
+| Remove background with local U2-Net (rembg) | `POST /api/v1/ai/remove-background` | Optional CPU AI |
+| Local prompt-guided image editing | `POST /api/v1/ai/edit` | Optional large AI model, CUDA recommended |
+| AI effects catalog and engine status | `GET /api/v1/ai/effects` | Always |
+| Web editor | `GET /` | Always |
 
-## Run on Windows (Python 3.11 or 3.12)
+### Photobooth template IDs
+
+The `basic` template plus 10 styles use existing public naming labels:
+
+- `photobooth_4cut` — Classic Film
+- `photobooth_cute` — Pastel Cute
+- `pb_cortis_4cut` — Electric Blue
+- `pb_shinchan_4cut` — Color Pop
+- `pb_supperman_4cut` — Hero Comic
+- `pb_meo_dang_yeu_4cut` — Tiny Paws
+- `pb_holo_4cut` — Holographic
+- `pb_photobooth_hello_kitty` — Pink Bow
+- `pb_vintage` — Vintage Paper
+- `pb_ripped_paper_4cut` — Scrapbook
+
+The designs themselves are created by this project (paper textures, frames, colored shapes). They are **not copies** of any source image and do not contain images of copyrighted characters or third-party graphics.
+
+### AI effects (`/api/v1/ai/edit`)
+
+The catalog maps six familiar effect IDs to original prompts: `stk_tai_tho`, `stk_mu_ngu_khoc`, `stk_jollibee`, `stk_gojo_satoru`, `stk_nak_ve_than`, `stk_shopee_food`. You can pass an explicit free-text `prompt` instead of using a preset (max 300 characters). Actual editing uses a **locally running** [InstructPix2Pix Diffusers model](https://huggingface.co/timbrooks/instruct-pix2pix), which must be installed and downloaded first. Generative edits can alter identity or facial details; do not promise exact preservation.
+
+## Run on Windows (Python 3.11 / 3.12)
+
+In PowerShell:
 
 ```powershell
 cd locket-backend
 py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m uvicorn app:app --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-Visit **http://127.0.0.1:8000** for the upload/preview web UI, and **http://127.0.0.1:8000/docs** for interactive API docs. `start-windows.ps1` also works if Python 3.11 is installed (`.\start-windows.ps1`).
+Open **http://127.0.0.1:8000** and use the web editor, or open **http://127.0.0.1:8000/docs** for interactive API docs.
 
-### Enable real local AI background removal
+### Optional: CPU background removal
 
 ```powershell
-python -m pip install -r requirements-ai.txt
-# Restart API, then try /api/v1/ai/remove-background.
+.\.venv\Scripts\python.exe -m pip install -r requirements-ai.txt
 ```
 
-The `rembg[cpu]` library uses a real local ONNX segmentation model (`u2netp`). The **first call downloads model weights** from the model's distribution host into the local machine; after that the image inference is performed locally. Model weights are not included in this repo. This is background removal, **not generative AI** or a clone of third-party paid AI image styles. It may take longer on CPU. Check license/terms of the model and package for your use case.
+Restart the server and call `/api/v1/ai/remove-background`. On first use, `rembg` downloads the `u2netp` segmentation model; the image is then processed locally. This is *segmentation*, not a generative filter engine.
 
-## API examples
+### Optional: real GPU image editing
 
-**Windows PowerShell** using curl.exe (replace image paths):
+A dedicated NVIDIA CUDA GPU and sufficient VRAM are **strongly recommended**. The default model is several gigabytes and the first run downloads model weights. An integrated GPU or CPU-only laptop can be extremely slow or unable to run this model.
+
+1. Install a matching **CUDA-compatible PyTorch** build from the [official PyTorch installer](https://pytorch.org/get-started/locally/).
+2. Install the optional pipeline dependencies:
 
 ```powershell
-curl.exe -X POST "http://127.0.0.1:8000/api/v1/filter" -F "file=@C:\Pictures\photo.jpg" -F "style=vintage" -o filtered.png
-
-curl.exe -X POST "http://127.0.0.1:8000/api/v1/photobooth" -F "files=@C:\Pictures\1.jpg" -F "files=@C:\Pictures\2.jpg" -F "files=@C:\Pictures\3.jpg" -F "files=@C:\Pictures\4.jpg" -F "layout=grid" -F "style=pastel" -F "caption=My Locket" -o photobooth.png
-
-curl.exe -X POST "http://127.0.0.1:8000/api/v1/ai/remove-background" -F "file=@C:\Pictures\photo.jpg" -F "background=transparent" -o transparent.png
+.\.venv\Scripts\python.exe -m pip install -r requirements-image-ai.txt
 ```
 
-You can set `background=#ffe8ef` to composite the AI cutout onto an opaque color.
+3. Restart the server and use the **AI Edit (GPU)** tab, or `POST /api/v1/ai/edit` with an image and `effect_id` or `prompt`.
 
-## API key, safety and privacy
+Default model: `timbrooks/instruct-pix2pix`. Override with the environment variable `PHOTOBOOTH_AI_MODEL` only if the alternative supports the `StableDiffusionInstructPix2PixPipeline` API. For experimental CPU usage (not recommended): `PHOTOBOOTH_ALLOW_CPU_AI=1`.
 
-- For local testing the API defaults to **127.0.0.1**, so it is not accessible from other machines. `GET /health`, `/`, `/docs`, and catalog remain public to your local machine.
-- **Before publicly exposing it**, configure `PHOTOBOOTH_API_KEY`, TLS/HTTPS, authentication, a reverse proxy with request-size and rate limits, and monitoring. Do **not** publish API keys in GitHub, Shadowrocket module, or screenshots.
-- API-key auth applies to all image-processing routes via header `X-API-Key` when configured:
+**Verification scope:** The AI endpoint, validation, and mocked pipeline output are covered by automated tests. We have **not downloaded the large weights or run real generative inference** in the test environment. Actual model performance, memory requirements and outputs depend on your machine. Check the model's applicable license and usage conditions.
+
+## API examples (Windows PowerShell)
+
+Upload 4 pictures to generate a styled collage:
+
+```powershell
+curl.exe -X POST http://127.0.0.1:8000/api/v1/photobooth `
+ -F "files=@C:\Pictures\1.jpg" `
+ -F "files=@C:\Pictures\2.jpg" `
+ -F "files=@C:\Pictures\3.jpg" `
+ -F "files=@C:\Pictures\4.jpg" `
+ -F "template_id=pb_holo_4cut" -F "layout=strip" `
+ -F "style=classic" -F "caption=My Photo" -o booth.png
+```
+
+Generate a local AI edit (after installing the model):
+
+```powershell
+curl.exe -X POST http://127.0.0.1:8000/api/v1/ai/edit `
+ -F "file=@C:\Pictures\photo.jpg" `
+ -F "effect_id=stk_tai_tho" -o edited.png
+```
+
+Try a template preview without uploading a photo:
+
+```powershell
+curl.exe "http://127.0.0.1:8000/api/v1/templates/pb_holo_4cut/preview?layout=grid" -o preview.png
+```
+
+## Privacy & security
+
+- Only JPEG, PNG and WebP. Max 8 MB per input image, 5,000 px per side and 20 megapixels. Photobooth requires exactly 4 photos and supports `strip` or `grid`.
+- Generated PNGs omit input EXIF/GPS. The service stores no images as permanent application files; FastAPI and OS may spool multipart uploads temporarily.
+- No code redirects user tokens, Locket authorization or photo uploads to third-party VPS or Workers. AI model weights may be downloaded from Hugging Face once; inference occurs locally.
+- By default the demo binds to loopback (`127.0.0.1`) in the documented command. **Do not expose port 8000 directly to the internet.**
+- For any public deployment, set a non-empty `PHOTOBOOTH_API_KEY`, serve HTTPS through a trusted reverse proxy, set rate/body-size limits, and control access to logs. Never publish that key in GitHub, a Shadowrocket module or client-side JavaScript.
+
+Set API key for local protected routes:
 
 ```powershell
 $env:PHOTOBOOTH_API_KEY = "replace-with-a-long-random-secret"
-python -m uvicorn app:app --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-- Each uploaded JPEG/PNG/WebP is limited to **8 MB**, **5000 px per side**, and **20 megapixels**; the photobooth route requires exactly 4 images. Output PNG removes original EXIF/GPS metadata.
-- Do not put private data or credentials in the request. The service does not save original/output images to an application data directory, but multipart spooling and OS/runtime logs may temporarily use storage.
-- The web demo runs on the same origin; no third-party scripts/CDNs.
-- Model download is a one-time outbound network access; it does **not** upload input photos to a cloud API.
+Then set the API key in the website or send header `X-API-Key` when calling private image-processing routes.
 
 ## Tests
 
 ```powershell
-python -m pip install pytest httpx
-python -m pytest -q
+.\.venv\Scripts\python.exe -m pip install pytest httpx
+.\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The tests cover health, catalog, filter output, both collage layouts, bad uploads, optional API key and missing AI dependency.
+Tests cover API validation and output images for all 11 templates, both layouts, catalog, invalid uploads, API key protection, AI dependency errors and mocked generative inference. The actual large model is not executed in the test suite.
 
-## Project files
+## Project structure
 
-- `app.py` — FastAPI routes, Pillow Photobooth and optional AI processing
-- `requirements.txt` — core Python dependencies
-- `requirements-ai.txt` — optional local model dependencies
-- `tests/test_app.py` — automated tests
-- `start-windows.ps1` — run locally on Windows
+```text
+locket-backend/
+  app.py                   FastAPI routes; basic photo filters and background removal
+  templates.py             11 original Photobooth themes and preview image generation
+  ai_engine.py             Lazy-loaded GPU InstructPix2Pix adapter; six prompt presets
+  web.html                 Local browser editor
+  requirements.txt         API and Pillow dependencies
+  requirements-ai.txt      Optional local background removal
+  requirements-image-ai.txt Optional generative image editing dependencies
+  start-windows.ps1        Windows run helper
+  tests/test_app.py        Existing API tests
+  tests/test_templates.py  Photobooth and preview tests
+  tests/test_ai_edit.py    AI endpoint and safety/error handling tests
+```
 
-## Next phase
+## Source analysis and provenance
 
-To integrate with your own companion mobile app, call these documented endpoints with your own images and permission. To implement compatibility with **Locket's** private network request, first establish a legitimate documented or authorized endpoint contract (field names, expected returned JSON, image references) and design opt-in authentication; do not redirect login tokens or private image uploads to an unknown host.
+We examined public JavaScript files in [`andanh447/locketgold-tool`](https://github.com/andanh447/locketgold-tool), [`andanh447/locketgold_tool`](https://github.com/andanh447/locketgold_tool) and [`andanh447.github.io`](https://github.com/andanh447/andanh447.github.io). Those files provided *names/IDs and architectural hints*, not the engine. Their mock HTTP 200 response for `generateFilteredImage` does **not** generate an image. No source code or opaque minified scripts from those repos have been copied into this project.
+
+This project is built to create real, privately processed images. It does **not** modify Locket Gold entitlements or claim to replace private third-party cloud infrastructure.
