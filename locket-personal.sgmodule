@@ -1,0 +1,15 @@
+#!name=Locket Personal - test
+#!desc=Personal Locket setup with one custom caption: test
+#!author=TPhu21
+#!homepage=https://github.com/TPhu21/my-config
+
+[General]
+update-url = https://raw.githubusercontent.com/TPhu21/my-config/main/locket-personal.sgmodule
+
+[Script]
+locket_remote = type=http-response, pattern=^https?:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-.*, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-personal.js, requires-body=true, max-size=524288, timeout=60
+deleteHeader = type=http-request, pattern=^https:\/\/api\.revenuecat\.com\/.+\/(receipts|subscribers), script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/deleteHeader.js, timeout=60
+revenuecat = type=http-response, pattern=^https:\/\/api\.revenuecat\.com\/.+\/(receipts$|subscribers\/[^/]+$), script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket_sub.js, requires-body=true, max-size=-1, timeout=60
+
+[MITM]
+hostname = %APPEND% api.revenuecat.com, firebaseremoteconfig.googleapis.com
