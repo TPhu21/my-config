@@ -154,3 +154,14 @@ locket-backend/
 We examined public JavaScript files in [`andanh447/locketgold-tool`](https://github.com/andanh447/locketgold-tool), [`andanh447/locketgold_tool`](https://github.com/andanh447/locketgold_tool) and [`andanh447.github.io`](https://github.com/andanh447/andanh447.github.io). Those files provided *names/IDs and architectural hints*, not the engine. Their mock HTTP 200 response for `generateFilteredImage` does **not** generate an image. No source code or opaque minified scripts from those repos have been copied into this project.
 
 This project is built to create real, privately processed images. It does **not** modify Locket Gold entitlements or claim to replace private third-party cloud infrastructure.
+
+
+## iPhone / Locket companion integration
+
+The photo studio now has an optional **Chia sẻ ảnh trên iPhone** button after image processing. On Safari over HTTPS, it opens the native iOS Share Sheet with the actual processed PNG (using the browser Web Share API). **Locket appears as a share target only if it supports receiving image files; otherwise save to Photos and use Locket's library import if available.** This is not an in-app Locket camera extension, nor does it unlock Gold.
+
+Detailed Windows/Tailscale HTTPS and Wi-Fi setup: [IOS-LOCKET-INTEGRATION.md](./IOS-LOCKET-INTEGRATION.md).
+
+For future native filter interoperability research, an **opt-in, read-only** Shadowrocket module observes safe API *schema metadata*, not image contents, credentials or account details: [locket-contract-probe.sgmodule](./locket-contract-probe.sgmodule). The matching JavaScript is [locket-contract-probe.js](./locket-contract-probe.js). The probe does not modify traffic or process images. Turn it off after testing, and do not use an untrusted MITM certificate.
+
+On an iPhone, the Shadowrocket and Tailscale VPN tunnels may conflict. Test Tailscale Serve with Shadowrocket disabled, or host this backend behind your own normal HTTPS domain.
