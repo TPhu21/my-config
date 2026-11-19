@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import threading
+from contextlib import nullcontext
 from functools import lru_cache
 
 from fastapi import HTTPException
@@ -85,8 +86,15 @@ def edit_photo(photo: Image.Image, effect_id: str, prompt: str, steps: int,
     # Only one GPU inference at a time to prevent concurrent VRAM exhaustion.
     try:
         with _GENERATE_LOCK:
-            import torch
-            with torch.inference_mode():
+            # Real Diffusers pipelines require torch. Mock pipelines in tests can
+            # execute without the optional torch dependency installed.
+            try:
+                import torch
+            except ImportError:
+                context = nullcontext()
+            else:
+                context = torch.inference_mode()
+            with context:
                 result = pipe(prompt=instruction, image=image,
                               num_inference_steps=steps,
                               guidance_scale=guidance_scale,
