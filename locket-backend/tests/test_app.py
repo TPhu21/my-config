@@ -1,0 +1,63 @@
+from io import BytesIO
+
+from fastapi.testclient import TestClient
+from PIL import Image
+
+from app import app
+
+client = TestClient(app)
+
+
+def image_bytes(color: str = "#fd93b2") -> bytes:
+    output = BytesIO()
+    Image.new("RGB", (240, 180), color).save(output, format="PNG")
+    return output.getvalue()
+
+
+def test_health_and_catalog():
+    assert client.get("/health").json()["status"] == "ok"
+    assert "strip" in client.get("/api/v1/catalog").json()["layouts"]
+    assert client.get("/").status_code == 200
+
+
+def test_filter_creates_png():
+    response = client.post("/api/v1/filter", files={"file": ("a.png", image_bytes(), "image/png")}, data={"style": "vintage"})
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    with Image.open(BytesIO(response.content)) as result:
+        assert result.size == (240, 180)
+
+
+def test_photobooth_both_layouts():
+    for layout, expected_width in [("strip", 436), ("grid", 834)]:
+        files = [("files", (f"{i}.png", image_bytes(), "image/png")) for i in range(4)]
+        response = client.post("/api/v1/photobooth", files=files, data={"layout": layout, "style": "noir", "caption": "Hello"})
+        assert response.status_code == 200, response.text
+        with Image.open(BytesIO(response.content)) as result:
+            assert result.width == expected_width
+            assert result.height > 500
+
+
+def test_reject_bad_upload_and_count():
+    bad = client.post("/api/v1/filter", files={"file": ("x.txt", b"foo", "text/plain")})
+    assert bad.status_code == 415
+    not_four = client.post("/api/v1/photobooth", files=[("files", ("a.png", image_bytes(), "image/png"))])
+    assert not_four.status_code == 422
+    bad_style = client.post("/api/v1/filter", files={"file": ("a.png", image_bytes(), "image/png")}, data={"style": "unsupported"})
+    assert bad_style.status_code == 422
+
+
+def test_api_key(monkeypatch):
+    import app as server
+    monkeypatch.setattr(server, "API_KEY", "example-private-key")
+    no_key = client.post("/api/v1/filter", files={"file": ("a.png", image_bytes(), "image/png")})
+    assert no_key.status_code == 401
+    with_key = client.post("/api/v1/filter", files={"file": ("a.png", image_bytes(), "image/png")}, headers={"X-API-Key": "example-private-key"})
+    assert with_key.status_code == 200
+
+
+def test_ai_missing_package_returns_503():
+    response = client.post("/api/v1/ai/remove-background", files={"file": ("a.png", image_bytes(), "image/png")})
+    # Tests run without optional rembg. Environments with the package may execute inference.
+    assert response.status_code == 503
+    assert "pip install" in response.json()["detail"]
