@@ -47,15 +47,15 @@ if (ua.includes("Locket")) {
             profile_banner: true
         }),
         feature_discovery_popup_config: JSON.stringify({
-            tag: "LOCKET GOLD",
+            tag: "LOC KET GÔN",
             tag_gradient: true,
             tag_style: "gold_gradient",
-            title: "bạn đang dùng cf quay video 45s",
+            title: "Tran Thien Phu",
             feature_set: [
                 {
-                    title: "done",
-                    body: "khung độc quyền kitty",
-                    imageURL: " "
+                    title: "đăn",
+                    body: "khung độc quyền shin",
+                    imageURL: "  "
                 
                 }
             ],
@@ -302,7 +302,7 @@ if (ua.includes("Locket")) {
         widget_sync_token_reload_mode: "clearTokenNever",
         widget_frame_event: JSON.stringify({
             uid: "midautumn_2026",
-            url: "https://i.ibb.co/JFgZsnvc/611548aa-b2b9-44c6-aacf-d6ead8fd6d42.png",
+            url: "https://i.postimg.cc/4NdZvFMr/7d388f60-9280-4be6-9a07-60a77b071b7a.png",
             use_local_time_zone: true,
             placement: "below",
             start_at: "2020-01-01T00:00:00",
