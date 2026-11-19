@@ -29,3 +29,18 @@ jobs:
       - name: Test read-only Shadowrocket script
         working-directory: locket-backend
         run: node tests/test_contract_probe.cjs
+
+  launcher-syntax:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse Windows iPhone launcher
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("locket-backend/connect-iphone.ps1", [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List | Out-String | Write-Host
+            exit 1
+          }
