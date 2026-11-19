@@ -1,0 +1,10 @@
+#!name=Locket Contract Probe - READ ONLY
+#!desc=Diagnostic only; does not modify traffic; does not log tokens or photos. Disable after testing.
+
+[MITM]
+enable = true
+hostname = %APPEND% api.locketcamera.com, us-central1-locket-4252a.cloudfunctions.net
+
+[Script]
+locket_contract_req = type=http-request, pattern=^https:\/\/(api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/(generateFilteredImage|generateFilter|applyFilter|createOverlay|getFilters)([/?].*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/locket-contract-probe.js, requires-body=true, max-size=32768, timeout=10
+locket_contract_resp = type=http-response, pattern=^https:\/\/(api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/(generateFilteredImage|generateFilter|applyFilter|createOverlay|getFilters)([/?].*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/locket-contract-probe.js, requires-body=true, max-size=32768, timeout=10
