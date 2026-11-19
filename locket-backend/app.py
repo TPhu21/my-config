@@ -8,7 +8,13 @@ from __future__ import annotations
 import io
 import os
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated
+
+from starlette.concurrency import run_in_threadpool
+
+from templates import TEMPLATES, get_template, preview_image, render_photobooth
+from ai_engine import effect_catalog, edit_photo, model_status
 
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response
@@ -131,7 +137,10 @@ def health() -> dict[str, str]:
 @app.get("/api/v1/catalog")
 def catalog() -> dict:
     return {"styles": list(STYLES), "layouts": list(LAYOUTS), "photobooth_photos": 4,
-            "ai": {"background_removal": "optional (requires rembg[cpu])"}}
+            "templates": [t.public() for t in TEMPLATES],
+            "ai_effects": effect_catalog(),
+            "ai": {"background_removal": "optional (requires rembg[cpu])",
+                   "prompt_editing": "optional (requires CUDA / requirements-image-ai.txt)"}}
 
 
 @app.post("/api/v1/filter", response_class=Response)
@@ -153,6 +162,7 @@ async def photobooth(
     layout: Annotated[str, Form()] = "strip",
     style: Annotated[str, Form()] = "classic",
     caption: Annotated[str, Form()] = "PHOTOBOOTH",
+    template_id: Annotated[str, Form()] = "basic",
     x_api_key: Annotated[str | None, Header()] = None,
 ) -> Response:
     authorize(x_api_key)
@@ -160,9 +170,10 @@ async def photobooth(
         raise HTTPException(status_code=422, detail="Exactly 4 photos are required")
     if layout not in LAYOUTS or style not in STYLES or len(caption) > 60:
         raise HTTPException(status_code=422, detail="Invalid layout, style or caption")
+    get_template(template_id)
     photos = [await load_photo(file) for file in files]
-    collage = create_booth(photos, layout, style, caption)
-    return png_response(collage, f"photobooth-{layout}.png")
+    collage = await run_in_threadpool(render_photobooth, photos, layout, style, caption, template_id)
+    return png_response(collage, f"photobooth-{template_id}-{layout}.png")
 
 
 @lru_cache(maxsize=1)
@@ -203,12 +214,41 @@ async def ai_remove_background(
     return png_response(cutout, "background-removed.png")
 
 
+@app.get("/api/v1/templates")
+def templates_list() -> dict:
+    return {"templates": [t.public() for t in TEMPLATES]}
+
+
+@app.get("/api/v1/templates/{template_id}/preview", response_class=Response)
+def template_preview(template_id: str, layout: str = "strip") -> Response:
+    get_template(template_id)
+    if layout not in LAYOUTS:
+        raise HTTPException(status_code=422, detail="Layout must be strip or grid")
+    return png_response(preview_image(template_id, layout).copy(), f"preview-{template_id}.png")
+
+
+@app.get("/api/v1/ai/effects")
+def ai_effects() -> dict:
+    return {"effects": effect_catalog(), "engine": model_status()}
+
+
+@app.post("/api/v1/ai/edit", response_class=Response)
+async def ai_edit_image(
+    file: Annotated[UploadFile, File()],
+    effect_id: Annotated[str, Form()] = "",
+    prompt: Annotated[str, Form()] = "",
+    steps: Annotated[int, Form(ge=8, le=50)] = 20,
+    guidance_scale: Annotated[float, Form(ge=1, le=15)] = 7.5,
+    image_guidance_scale: Annotated[float, Form(ge=1, le=3)] = 1.5,
+    x_api_key: Annotated[str | None, Header()] = None,
+) -> Response:
+    authorize(x_api_key)
+    photo = await load_photo(file)
+    result = await run_in_threadpool(edit_photo, photo, effect_id, prompt,
+                                     steps, guidance_scale, image_guidance_scale)
+    return png_response(result, "ai-edited.png")
+
+
 @app.get("/", response_class=HTMLResponse)
 def demo() -> str:
-    return '''<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Private Photobooth</title><style>body{font-family:system-ui,sans-serif;max-width:700px;margin:35px auto;padding:0 16px;color:#202632}h1{font-size:26px}section{border:1px solid #ddd;border-radius:12px;padding:18px;margin:18px 0}label{display:block;margin:10px 0}input,select,button{font:inherit}button{padding:10px 18px;cursor:pointer}img{max-width:100%;border-radius:8px}small{color:#666}</style>
-<h1>Photobooth &amp; AI — chạy trên server của bạn</h1><p><small>Ảnh không được gửi đến Worker/VPS bên thứ ba. Tính năng AI xóa nền cần cài thêm rembg.</small></p>
-<label>API key (nếu đã cấu hình) <input id="key" type="password" autocomplete="off"></label>
-<section><h2>Photobooth (4 ảnh)</h2><form id="booth"><label>Chọn 4 ảnh <input name="files" type="file" accept="image/png,image/jpeg,image/webp" multiple required></label><label>Layout <select name="layout"><option value="strip">Strip (4 dọc)</option><option value="grid">Grid (2×2)</option></select></label><label>Style <select name="style"><option>classic</option><option>vintage</option><option>pastel</option><option>noir</option><option>comic</option></select></label><label>Caption <input name="caption" maxlength="60" value="PHOTOBOOTH"></label><button>Tạo ảnh</button></form></section>
-<section><h2>Filter / AI xóa nền (1 ảnh)</h2><form id="single"><label>Ảnh <input name="file" type="file" accept="image/png,image/jpeg,image/webp" required></label><label>Tác vụ <select id="action"><option value="/api/v1/filter">Hiệu ứng ảnh</option><option value="/api/v1/ai/remove-background">AI xóa nền</option></select></label><label>Style <select name="style" id="style"><option>vintage</option><option>pastel</option><option>noir</option><option>comic</option><option>classic</option></select></label><button>Xử lý</button></form></section><p id="state" role="status"></p><a id="save" style="display:none" download="result.png">Tải kết quả PNG</a><p><img id="preview" alt="Kết quả"></p>
-<script>let last=null;async function send(form,url){const status=document.getElementById('state');status.textContent='Đang xử lý…';const fd=new FormData(form);if(url.includes('remove-background'))fd.delete('style');if(url.includes('/filter'))fd.delete('caption');try{const r=await fetch(url,{method:'POST',headers:document.getElementById('key').value?{'X-API-Key':document.getElementById('key').value}:{},body:fd});if(!r.ok){const e=await r.json();throw Error(e.detail||r.statusText)}const blob=await r.blob();if(last)URL.revokeObjectURL(last);last=URL.createObjectURL(blob);document.getElementById('preview').src=last;const a=document.getElementById('save');a.href=last;a.style.display='inline';status.textContent='Hoàn tất: tải ảnh PNG bên dưới.'}catch(e){status.textContent='Lỗi: '+e.message}}document.getElementById('booth').onsubmit=e=>{e.preventDefault();send(e.target,'/api/v1/photobooth')};document.getElementById('single').onsubmit=e=>{e.preventDefault();send(e.target,document.getElementById('action').value)};</script></html>'''
+    return Path(__file__).with_name("web.html").read_text(encoding="utf-8")
