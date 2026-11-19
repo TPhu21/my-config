@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import os
+import secrets
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
@@ -17,7 +18,7 @@ from templates import TEMPLATES, get_template, preview_image, render_photobooth
 from ai_engine import effect_catalog, edit_photo, model_status
 
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from PIL import Image, ImageEnhance, ImageFilter, ImageFont, ImageOps, ImageDraw, UnidentifiedImageError
 
 app = FastAPI(title="Private Photobooth + AI Backend", version="1.0.0")
@@ -27,16 +28,39 @@ MAX_PIXELS = 20_000_000
 MAX_SIDE = 5000
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 API_KEY = os.getenv("PHOTOBOOTH_API_KEY", "")
+# In hosted mode a missing secret disables processing instead of exposing public uploads.
+REQUIRE_AUTH = os.getenv("PHOTOBOOTH_REQUIRE_AUTH", "").lower() in {"1", "true", "yes"}
+MAX_REQUEST_BYTES = 36 * 1024 * 1024
+
 STYLES = ("classic", "noir", "vintage", "pastel", "comic")
 LAYOUTS = ("strip", "grid")
 
 
 def authorize(x_api_key: str | None) -> None:
-    """Optional shared-key auth. Do not commit the key or embed it in public modules."""
-    if API_KEY:
-        import secrets
-        if not x_api_key or not secrets.compare_digest(x_api_key, API_KEY):
-            raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key")
+    """Protect processing endpoints. Do not place a server secret in public clients."""
+    if REQUIRE_AUTH and not API_KEY:
+        raise HTTPException(status_code=503, detail="Server owner must configure PHOTOBOOTH_API_KEY")
+    if API_KEY and (not x_api_key or not secrets.compare_digest(x_api_key, API_KEY)):
+        raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key")
+
+
+@app.middleware("http")
+async def reject_unprotected_or_oversize_uploads(request, call_next):
+    """Reject untrusted uploads before FastAPI parses multipart bodies."""
+    if request.method == "POST" and request.url.path.startswith("/api/v1/"):
+        if REQUIRE_AUTH and not API_KEY:
+            return JSONResponse({"detail": "Server owner must configure PHOTOBOOTH_API_KEY"}, status_code=503)
+        supplied = request.headers.get("x-api-key", "")
+        if API_KEY and not secrets.compare_digest(supplied, API_KEY):
+            return JSONResponse({"detail": "Invalid or missing X-API-Key"}, status_code=401)
+        length = request.headers.get("content-length")
+        if length:
+            try:
+                if int(length) > MAX_REQUEST_BYTES:
+                    return JSONResponse({"detail": "Upload request exceeds 36 MB"}, status_code=413)
+            except ValueError:
+                return JSONResponse({"detail": "Invalid Content-Length"}, status_code=400)
+    return await call_next(request)
 
 
 async def load_photo(file: UploadFile) -> Image.Image:
@@ -252,3 +276,15 @@ async def ai_edit_image(
 @app.get("/", response_class=HTMLResponse)
 def demo() -> str:
     return Path(__file__).with_name("web.html").read_text(encoding="utf-8")
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def manifest():
+    return FileResponse(Path(__file__).with_name("manifest.webmanifest"),
+                        media_type="application/manifest+json")
+
+
+@app.get("/favicon.svg", include_in_schema=False)
+def favicon():
+    return FileResponse(Path(__file__).with_name("favicon.svg"),
+                        media_type="image/svg+xml")

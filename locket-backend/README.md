@@ -165,3 +165,7 @@ Detailed Windows/Tailscale HTTPS and Wi-Fi setup: [IOS-LOCKET-INTEGRATION.md](./
 For future native filter interoperability research, an **opt-in, read-only** Shadowrocket module observes safe API *schema metadata*, not image contents, credentials or account details: [locket-contract-probe.sgmodule](./locket-contract-probe.sgmodule). The matching JavaScript is [locket-contract-probe.js](./locket-contract-probe.js). The probe does not modify traffic or process images. Turn it off after testing, and do not use an untrusted MITM certificate.
 
 On an iPhone, the Shadowrocket and Tailscale VPN tunnels may conflict. Test Tailscale Serve with Shadowrocket disabled, or host this backend behind your own normal HTTPS domain.
+
+## iPhone HTTPS deployment
+
+The repository root contains `render.yaml` for an optional Render Blueprint. It deploys CPU-only Photobooth / color filters with API-key auth and an installable Safari Home Screen web app. Read [IOS-LOCKET-INTEGRATION.md](./IOS-LOCKET-INTEGRATION.md) for step-by-step deployment and log viewing. This is a sharing/import workflow, **not direct Locket camera integration**.

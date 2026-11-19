@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Private Photo Studio</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#6546d3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Photo Studio">
 <style>
 :root{color-scheme:light;font:16px/1.55 system-ui,-apple-system,'Segoe UI',sans-serif;color:#20233a;background:#f5f3fb}
 *{box-sizing:border-box}body{margin:0}header{padding:26px 20px;background:#fff;border-bottom:1px solid #e5e0ed}
@@ -28,12 +33,13 @@ label{display:block;font-weight:650;font-size:13px;margin:14px 0 5px}select,inpu
 <main class="shell">
 <h1>Biến ảnh thành kỷ niệm.</h1>
 <p class="lead">Chọn một mẫu ảnh, ghép bốn khung hình hoặc thử hiệu ứng AI chạy cục bộ. Ảnh chỉ được xử lý trên máy chủ mà bạn tự triển khai.</p>
-<span class="pill">Local-first · PNG output</span>
+<span class="pill">Ảnh PNG · Chia sẻ với Locket qua iOS</span>
+<p class="note">Trên iPhone: mở bằng Safari qua HTTPS, chọn Chia sẻ ảnh rồi chọn Locket nếu có trong bảng chia sẻ. Bạn cũng có thể dùng Chia sẻ → Thêm vào Màn hình chính để mở Photo Studio nhanh hơn.</p>
 <div class="layout">
  <section class="card">
   <h2>Trình chỉnh sửa ảnh</h2><p class="muted">Chọn chế độ và tải ảnh để bắt đầu.</p>
   <div class="tabs"><button type="button" class="tab active" data-tab="booth">Photobooth</button><button type="button" class="tab" data-tab="filter">Bộ lọc</button><button type="button" class="tab" data-tab="ai">AI Edit (GPU)</button><button type="button" class="tab" data-tab="cutout">Xóa nền AI</button></div>
-  <label for="key">API key (chỉ nhập nếu server có cấu hình)</label><input type="password" id="key" autocomplete="off" placeholder="Dành cho backend tự host">
+  <label for="key">API key (bắt buộc với server công khai)</label><input type="password" id="key" autocomplete="off" placeholder="Dành cho backend tự host">
   <form id="booth" class="mode">
    <label for="booth-files">4 ảnh</label><input id="booth-files" name="files" type="file" accept="image/png,image/jpeg,image/webp" multiple required>
    <div class="row"><div><label for="template">Mẫu Photobooth</label><select name="template_id" id="template"></select></div><div><label for="layout">Bố cục</label><select id="layout" name="layout"><option value="strip">4 ảnh dọc</option><option value="grid">Lưới 2×2</option></select></div></div>

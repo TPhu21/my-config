@@ -1,0 +1,13 @@
+{
+  "name": "Private Photo Studio",
+  "short_name": "Photo Studio",
+  "description": "Chỉnh sửa ảnh Photobooth và chia sẻ sang Locket qua iOS",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f3fb",
+  "theme_color": "#6546d3",
+  "icons": [
+    {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ]
+}
