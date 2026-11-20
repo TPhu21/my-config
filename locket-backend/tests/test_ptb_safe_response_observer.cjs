@@ -18,12 +18,14 @@ function run(url, contentType, body) {
 }
 const sensitive = "SECRET_TOKEN_LOCATION_DO_NOT_EXPOSE";
 const body = JSON.stringify({
-  result: {status: 200, errors: [], image_url: "https://example.test/" + sensitive, job_id: sensitive},
+  result: {status: 200, errors: [], image_url: "https://example.test/" + sensitive, job_id: sensitive, data: {url: "https://example.test/" + sensitive, image_url: sensitive, status: 200}},
   untrusted: sensitive, authorization: sensitive, account_id: sensitive
 });
 const result = run("https://163.223.9.98/generateFilteredImage", "application/json; charset=utf-8", body);
 assert.ok(result.length > 0);
 assert.ok(result.map(x => x.join(" ")).join(" ").includes("image_url:string"));
+assert.ok(result.map(x => x.join(" ")).join(" ").includes("data={status:number,url:string,image_url:string}"));
+assert.ok(result.map(x => x.join(" ")).join(" ").includes("app_status=200"));
 assert.ok(!JSON.stringify(result).includes(sensitive));
 assert.deepEqual(run("https://api.revenuecat.com/subscribers/user", "application/json", body), []);
 assert.deepEqual(run("https://163.223.9.98/postMomentV2", "application/json", body), []);
