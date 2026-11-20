@@ -3738,6 +3738,18 @@ try {
         entries.feature_gates=JSON.stringify(gates);
       }
     }catch(_){}
+    // A single local confirmation makes stale module and Firebase cache issues visible.
+    // Never includes URLs, headers, account identifiers, photo bytes or secret values.
+    try {
+      var mark='PTB_COMPAT_V2_RC_APPLIED';
+      var already=typeof $persistentStore!=='undefined' && $persistentStore.read(mark)==='1';
+      if(!already && typeof $notification!=='undefined' &&
+          $notification && typeof $notification.post==='function'){
+        $notification.post('PTB · Firebase V2', 'Cấu hình kết hợp đã chạy',
+          'Đã thêm 10 mẫu PTB; giữ phần video trong cấu hình cá nhân');
+        if(typeof $persistentStore!=='undefined')$persistentStore.write('1',mark);
+      }
+    }catch(_){}
 
   }
 } catch (_ptbError) {
