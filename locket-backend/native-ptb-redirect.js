@@ -31,18 +31,50 @@
       return;
     }
     var content = JSON.parse(String(req.body || ""));
-    var id = String(content.filter_id || "");
+    // Inspect only schema/enum names; never log an image URL, prompt, or token.
+    var id = String(content.filter_id || content.filterId || "");
+    var filterType = String(content.filter_type || content.filterType || "");
+    var photoField = typeof content.image_url === "string" ? "image_url" :
+                     typeof content.imageUrl === "string" ? "imageUrl" : "";
+    var safeKeys = Object.keys(content).filter(function(k) {
+      return /^(filter_id|filterId|filter_type|filterType|image_url|imageUrl|prompt)$/i.test(k);
+    }).sort();
+    // One-time reason codes indicate which part of the Locket contract changed.
+    if (!id) {
+      mark("NO_FILTER_ID keys=" + safeKeys.join(","));
+      $done({});
+      return;
+    }
     var allowed = {
       photobooth_4cut:1, photobooth_cute:1, pb_cortis_4cut:1,
       pb_shinchan_4cut:1, pb_supperman_4cut:1, pb_meo_dang_yeu_4cut:1,
       pb_holo_4cut:1, pb_photobooth_hello_kitty:1,
       pb_vintage:1, pb_ripped_paper_4cut:1
     };
-    if (!allowed[id] || content.filter_type !== "normal" || typeof content.image_url !== "string") {
-      mark("FILTER_NOT_MATCHED");
+    if (!allowed[id]) {
+      mark("UNKNOWN_FILTER_ID (not a PTB known to our backend)");
       $done({});
       return;
     }
+    if (filterType !== "normal") {
+      mark("FILTER_TYPE_NOT_NORMAL");
+      $done({});
+      return;
+    }
+    if (!photoField) {
+      mark("NO_IMAGE_URL keys=" + safeKeys.join(","));
+      $done({});
+      return;
+    }
+    // Canonicalize recognized aliases so the owned backend accepts the request.
+    content.filter_id = id;
+    content.filter_type = filterType;
+    content.image_url = content[photoField];
+    var sanitizedBody = JSON.stringify({
+      filter_id: content.filter_id,
+      filter_type: content.filter_type,
+      image_url: content.image_url
+    });
     var headers = {};
     var sourceHeaders = req.headers || {};
     Object.keys(sourceHeaders).forEach(function(k) {
@@ -56,7 +88,8 @@
     mark("REDIRECT_REQUESTED");
     $done({
       url: "https://phu-private-photo-studio-staging.onrender.com/generateFilteredImage",
-      headers: headers
+      headers: headers,
+      body: sanitizedBody
     });
   } catch (_) {
     mark("BODY_PARSE_FAILED");
