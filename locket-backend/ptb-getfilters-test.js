@@ -37,9 +37,27 @@
         iconUrl: image,
         overlayImageUrl: image,
         overlayImageURL: image,
-        icon: { url: image, iconUrl: image, remoteImage: image, sfSymbol: 'camera' },
+        icon: { url: image, iconUrl: image, remoteImage: image, sfSymbol: 'camera', symbol: 'camera', emoji: '📸' },
+        tintColor: '#E2E8F0',
+        colors: ['#E2E8F0', '#93C5FD'],
+        captureButtonColors: ['#E2E8F0', '#93C5FD'],
+        textColor: '#FFFFFF',
         outputUrl: null,
-        referenceImages: []
+        productUrl: null,
+        referenceImages: [],
+        // Describes these user-owned preview templates, not any subscription entitlement.
+        requires_gold: false,
+        requiresGold: false,
+        is_gold: false,
+        isGold: false,
+        unlocked: true,
+        is_unlocked: true,
+        isUnlocked: true,
+        free: true,
+        allowsTryFilter: true,
+        allows_try_filter: true,
+        tryButtonEnabled: true,
+        try_button_enabled: true
       };
     });
     // Mirror the response envelope observed in HTTP Toolkit and developer script.
