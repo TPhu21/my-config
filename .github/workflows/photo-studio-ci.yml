@@ -70,3 +70,10 @@ jobs:
             $parseErrors | Format-List | Out-String | Write-Host
             exit 1
           }
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("locket-backend/setup-http-toolkit.ps1", [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List | Out-String | Write-Host
+            exit 1
+          }
