@@ -200,6 +200,28 @@ async def photobooth(
     return png_response(collage, f"photobooth-{template_id}-{layout}.png")
 
 
+@app.post("/api/v1/photobooth/from-one", response_class=Response)
+async def photobooth_from_one(
+    file: Annotated[UploadFile, File()],
+    layout: Annotated[str, Form()] = "grid",
+    style: Annotated[str, Form()] = "classic",
+    caption: Annotated[str, Form()] = "PHOTOBOOTH",
+    template_id: Annotated[str, Form()] = "basic",
+    x_api_key: Annotated[str | None, Header()] = None,
+) -> Response:
+    """Create a four-panel Photobooth from one authorized, uploaded image.
+
+    Companion adapter only; this is not the undocumented Locket filter API.
+    """
+    authorize(x_api_key)
+    if layout not in LAYOUTS or style not in STYLES or len(caption) > 60:
+        raise HTTPException(status_code=422, detail="Invalid layout, style or caption")
+    get_template(template_id)
+    photo = await load_photo(file)
+    collage = await run_in_threadpool(render_photobooth, [photo] * 4, layout, style, caption, template_id)
+    return png_response(collage, f"photobooth-one-{template_id}-{layout}.png")
+
+
 @lru_cache(maxsize=1)
 def ai_session():
     from rembg import new_session  # Optional package, imported only on AI route
