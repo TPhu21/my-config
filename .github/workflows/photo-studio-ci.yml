@@ -61,6 +61,10 @@ jobs:
         working-directory: locket-backend
         run: node tests/test_personal_ptb_merged.cjs
 
+      - name: Test opt-in sanitized PTB response observer
+        working-directory: locket-backend
+        run: node tests/test_ptb_safe_response_observer.cjs
+
       - name: Smoke test running FastAPI (including a real PNG render)
         working-directory: locket-backend
         shell: bash
