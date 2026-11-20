@@ -9,7 +9,7 @@ assert.ok(moduleText.includes('PTB Personal + Photobooth - ISOLATED TEST'));
 assert.equal((moduleText.match(/type=http-response/g)||[]).length,3);
 assert.equal((moduleText.match(/type=http-request/g)||[]).length,1);
 assert.equal(moduleText.includes('api.revenuecat.com'),false);
-assert.equal(moduleText.includes('us-central1-locket-4252a.cloudfunctions.net'),false);
+assert.equal(moduleText.includes('163.223.9.98'),false);
 const notes=[];
 const store={};
 function run(url, body, status=200) {
