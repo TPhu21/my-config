@@ -85,6 +85,10 @@ def main() -> int:
         ("/health", lambda kind, raw: json.loads(raw).get("status") == "ok"),
         ("/api/v1/catalog", lambda kind, raw: bool(json.loads(raw).get("templates"))),
         ("/api/v1/templates", lambda kind, raw: raw.startswith(b"{") or raw.startswith(b"[")),
+        ("/api/v1/bridge/contract", lambda kind, raw: (
+            json.loads(raw).get("native_locket_integration") is False
+            and json.loads(raw).get("upload", {}).get("path") == "/api/v1/bridge/render"
+        )),
         ("/api/v1/templates/basic/preview?layout=grid",
          lambda kind, raw: "image/png" in kind and raw.startswith(PNG_MAGIC)),
     )
