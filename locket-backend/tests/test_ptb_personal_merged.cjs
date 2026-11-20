@@ -9,9 +9,9 @@ const combined=fs.readFileSync(path.join(root,'ptb-remoteconfig-personal-merged.
 const moduleText=fs.readFileSync(path.join(root,'ptb-getfilters-test.sgmodule'),'utf8');
 assert.match(moduleText,/PTB Personal \+ Photobooth - COMPAT V2/);
 assert.match(moduleText,/ptb-remoteconfig-personal-merged\.js/);
-assert.match(moduleText,/projects\\\/\[0-9\]\+/);
-assert.equal((moduleText.match(/type=http-response/g)||[]).length,3);
-assert.equal((moduleText.match(/type=http-request/g)||[]).length,1);
+assert.match(moduleText,/projects\\\/\[\^\/\]\+/);
+assert.equal((moduleText.match(/type=http-response/g)||[]).length,2);
+assert.equal((moduleText.match(/type=http-request/g)||[]).length,0);
 assert.equal(moduleText.includes('api.revenuecat.com'),false);
 assert.equal(moduleText.includes('163.223.9.98'),false);
 assert.ok(combined.includes('var MY_VIDEO_DURATION = 45.0;'));
@@ -91,4 +91,29 @@ executeWithNotifications();
 assert.equal(notices.length,1);
 assert.equal(notices[0][2].includes('10 mẫu PTB'),true);
 assert.equal(JSON.stringify(notices).includes('SECRET_KEY'),false);
+
+function evaluateForProject(projectID, userAgent) {
+ const outputs=[];
+ vm.runInNewContext(combined,{
+  $request:{url:'https://firebaseremoteconfig.googleapis.com/v1/projects/'+projectID+'/namespaces/firebase:fetch',headers:{'User-Agent':userAgent,Authorization:'Bearer SECRET_KEY'}},
+  $response:{body:JSON.stringify(synthetic),status:200},
+  $done:p=>outputs.push(p)
+ },{timeout:6000});
+ assert.equal(outputs.length,1);
+ return JSON.parse(outputs[0].body);
+}
+const compiledModuleRule=moduleText.split('\n').find(line=>line.startsWith('ptb_firebase_catalog = '));
+assert.ok(compiledModuleRule);
+assert.ok(!compiledModuleRule.includes('[0-9]+'));
+assert.ok(compiledModuleRule.includes('[^/]+'));
+for (const [project,agent] of [
+  ['641029076083','Firebase/11.0.0'],
+  ['locket-4252a','Locket/2.73'],
+  ['locket-4252a','Firebase/11.0.0']
+]) {
+ const response=evaluateForProject(project,agent);
+ const filters=JSON.parse(response.entries.camera_filter_config);
+ assert.equal(JSON.parse(response.entries.camera).gold_max_duration,45);
+ assert.ok(filters.sheet_filters.some(group=>group.title.en==='Photobooth 📸' && group.filter_ids.length===10));
+}
 console.log('PASS PTB merged personal script: all non-filter settings preserved, 45s retained, PTB shown and no secret leakage');
