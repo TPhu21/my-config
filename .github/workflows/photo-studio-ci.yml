@@ -65,6 +65,10 @@ jobs:
         working-directory: locket-backend
         run: node tests/test_ptb_safe_response_observer.cjs
 
+      - name: Test scoped PTB image-delivery observer
+        working-directory: locket-backend
+        run: node tests/test_ptb_image_delivery_observer.cjs
+
       - name: Smoke test running FastAPI (including a real PNG render)
         working-directory: locket-backend
         shell: bash
