@@ -1,12 +1,10 @@
-#!name=PTB Personal + Photobooth - COMPAT V2
-#!desc=Firebase SDK User-Agent fix. Personal settings and PTB in one response; no photo redirect. Opt-in only.
+#!name=PTB Personal + Photobooth - COMPAT V3
+#!desc=Experimental PTB category + own personal config for numeric/named Firebase fetch. No photo upload/redirect.
 
 [MITM]
 enable = true
-hostname = %APPEND% api.locketcamera.com, firebaseremoteconfig.googleapis.com, us-central1-locket-4252a.cloudfunctions.net
+hostname = %APPEND% api.locketcamera.com, firebaseremoteconfig.googleapis.com
 
 [Script]
-ptb_getfilters_response = type=http-response, pattern=^https:\/\/api\.locketcamera\.com\/getFilters(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-getfilters-response-compat.js?trial=20261120a, requires-body=true, max-size=1048576, timeout=15
-ptb_firebase_catalog = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[0-9]+\/namespaces\/[^/]+:fetch(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-remoteconfig-personal-merged.js?trial=20261120uafix-confirm, requires-body=true, max-size=1048576, timeout=15
-ptb_image_api_request = type=http-request, pattern=^https:\/\/(api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/(generateFilteredImage|generateFilter|applyFilter|createOverlay)(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-image-api-status-only.js?trial=20261120v1, requires-body=false, timeout=10
-ptb_image_api_response = type=http-response, pattern=^https:\/\/(api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/(generateFilteredImage|generateFilter|applyFilter|createOverlay)(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-image-api-status-only.js?trial=20261120v1, requires-body=false, timeout=10
+ptb_getfilters_response = type=http-response, pattern=^https:\/\/api\.locketcamera\.com\/getFilters(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-getfilters-response-compat.js?trial=20261121v3, requires-body=true, max-size=1048576, timeout=15
+ptb_firebase_catalog = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[^/]+\/namespaces\/[^/]+:fetch(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-remoteconfig-personal-merged.js?trial=20261121v3, requires-body=true, max-size=1048576, timeout=30
