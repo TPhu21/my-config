@@ -16,5 +16,7 @@ services:
         value: 3.11.11
       - key: PHOTOBOOTH_REQUIRE_AUTH
         value: "1"
+      - key: PHOTOBOOTH_PUBLIC_BASE_URL
+        value: "https://phu-private-photo-studio-staging.onrender.com"
       - key: PHOTOBOOTH_API_KEY
         generateValue: true
