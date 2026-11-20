@@ -10,8 +10,8 @@ const moduleText=fs.readFileSync(path.join(root,'ptb-getfilters-test.sgmodule'),
 assert.match(moduleText,/Personal \+ Photobooth - ISOLATED TEST/);
 assert.match(moduleText,/ptb-remoteconfig-personal-merged\.js/);
 assert.match(moduleText,/projects\\\/\[0-9\]\+/);
-assert.equal((moduleText.match(/type=http-response/g)||[]).length,2);
-assert.equal((moduleText.match(/type=http-request/g)||[]).length,0);
+assert.equal((moduleText.match(/type=http-response/g)||[]).length,3);
+assert.equal((moduleText.match(/type=http-request/g)||[]).length,1);
 assert.equal(moduleText.includes('api.revenuecat.com'),false);
 assert.equal(moduleText.includes('us-central1-locket-4252a.cloudfunctions.net'),false);
 assert.ok(combined.startsWith(source.slice(0,5000)));
