@@ -10,12 +10,14 @@ can invalidate URLs. For multi-instance production, use private object storage.
 from __future__ import annotations
 
 import io
+import os
 import secrets
 import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Annotated
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.responses import Response
@@ -90,9 +92,22 @@ async def owned_photo_render(
     buffer = io.BytesIO()
     rendered.convert("RGB").save(buffer, format="JPEG", quality=88, optimize=True)
     token = _put(buffer.getvalue())
-    # The only public access token is in this temporary URL. HTTPS is required
-    # at deployment; local TestClient uses http://testserver for isolated tests.
-    base = str(request.base_url).rstrip("/")
+    # Never trust an unverified Host/X-Forwarded-Host header for public URLs.
+    # Deployed environments must pin their public HTTPS origin server-side.
+    configured_base = os.getenv("PHOTOBOOTH_PUBLIC_BASE_URL", "").strip()
+    if configured_base:
+        parsed_base = urlsplit(configured_base)
+        if (parsed_base.scheme != "https" or not parsed_base.hostname or
+                parsed_base.username or parsed_base.password or
+                parsed_base.path not in ("", "/") or
+                parsed_base.query or parsed_base.fragment):
+            raise HTTPException(503, "Invalid server public origin configuration")
+        base = configured_base.rstrip("/")
+    else:
+        # Fail closed for public hosts; permit only loopback TestClient/local dev.
+        if request.url.hostname not in {"testserver", "localhost", "127.0.0.1", "::1"}:
+            raise HTTPException(503, "Server public origin is not configured")
+        base = str(request.base_url).rstrip("/")
     image_url = base + "/api/v1/owned-photo/images/" + token
     return Response(
         content=__import__("json").dumps({
