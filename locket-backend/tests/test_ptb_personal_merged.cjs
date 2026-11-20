@@ -7,21 +7,22 @@ const root=path.resolve(__dirname,'..');
 const source=fs.readFileSync(path.join(root,'../locket-personal.js'),'utf8');
 const combined=fs.readFileSync(path.join(root,'ptb-remoteconfig-personal-merged.js'),'utf8');
 const moduleText=fs.readFileSync(path.join(root,'ptb-getfilters-test.sgmodule'),'utf8');
-assert.match(moduleText,/Personal \+ Photobooth - ISOLATED TEST/);
+assert.match(moduleText,/PTB Personal \+ Photobooth - COMPAT V2/);
 assert.match(moduleText,/ptb-remoteconfig-personal-merged\.js/);
 assert.match(moduleText,/projects\\\/\[0-9\]\+/);
 assert.equal((moduleText.match(/type=http-response/g)||[]).length,3);
 assert.equal((moduleText.match(/type=http-request/g)||[]).length,1);
 assert.equal(moduleText.includes('api.revenuecat.com'),false);
 assert.equal(moduleText.includes('163.223.9.98'),false);
-assert.ok(combined.startsWith(source.slice(0,5000)));
+assert.ok(combined.includes('var MY_VIDEO_DURATION = 45.0;'));
+assert.ok(combined.includes('remoteConfigFetch'));
 assert.ok(combined.length>source.length);
 const synthetic={state:'UPDATE',entries:{keep_key:'unchanged',feature_gates:JSON.stringify({existing_gate:'disabled'}),camera_filter_config:JSON.stringify({sheet_filters:[{title:{en:'Goofy'},filter_ids:['okay_wig']}],picker_filters:['okay_wig'],remote_filters:[]})}};
-function evaluate(code){
+function evaluate(code, userAgent='Locket/4404'){
  const outputs=[];
  vm.runInNewContext(code,{
   $request:{url:'https://firebaseremoteconfig.googleapis.com/v1/projects/641029076083/namespaces/firebase:fetch',
-    headers:{'User-Agent':'Locket/4404',Authorization:'Bearer SECRET_KEY'}},
+    headers:{'User-Agent':userAgent,Authorization:'Bearer SECRET_KEY'}},
   $response:{body:JSON.stringify(synthetic),status:200},
   $done:payload=>outputs.push(payload)
  },{timeout:6000});
@@ -49,4 +50,19 @@ assert.ok(cfg.sheet_filters.some(g=>g.title.en==='Photobooth 📸' && g.filter_i
 assert.equal(cfg.remote_filters.length,10);
 assert.equal(cfg.picker_filters.length>=10,true);
 assert.ok(!JSON.stringify(next).includes('SECRET_KEY'));
+// iOS Firebase SDK may call :fetch without a Locket User-Agent.
+// Original personal rewrite skips it, while the merged numeric-project handler must
+// still apply BOTH personal settings and PTB to the *same* response.
+for(const agent of ['Firebase/11.0.0 iOS', 'Mozilla/5.0', '']){
+  const before=evaluate(source,agent);
+  assert.equal(before.entries.camera,undefined);
+  const after=evaluate(combined,agent);
+  assert.equal(JSON.parse(after.entries.camera).gold_max_duration,45);
+  assert.equal(after.entries.camera_roll_video_max_duration,'45');
+  assert.equal(after.entries.audio_session_deactivation_enabled,'true');
+  const config=JSON.parse(after.entries.camera_filter_config);
+  assert.ok(config.sheet_filters.some(g=>g.title.en==='Photobooth 📸' && g.filter_ids.length===10));
+  assert.equal(config.remote_filters.length,10);
+  assert.equal(JSON.parse(after.entries.feature_gates).longer_video,'enabled');
+}
 console.log('PASS PTB merged personal script: all non-filter settings preserved, 45s retained, PTB shown and no secret leakage');
