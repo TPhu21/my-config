@@ -54,3 +54,41 @@ def test_expiration_and_template_validation(monkeypatch):
     entry=next(iter(delivery._store.values()))
     monkeypatch.setattr(delivery.time,"monotonic",lambda:entry.expires_at+1)
     assert client.get(path).status_code == 404
+
+def test_pinned_public_origin_ignores_host_header(monkeypatch):
+    monkeypatch.setattr(app, "API_KEY", "offline-only")
+    monkeypatch.setattr(app, "REQUIRE_AUTH", True)
+    monkeypatch.setenv("PHOTOBOOTH_PUBLIC_BASE_URL", "https://phu-private-photo-studio-staging.onrender.com")
+    delivery._store.clear()
+    client=TestClient(app.app, base_url="https://untrusted.example")
+    response=client.post(
+        "/api/v1/owned-photo/render",
+        headers={"X-API-Key":"offline-only", "Host":"evil.invalid"},
+        files={"file":("s.png",synthetic_png(),"image/png")},
+    )
+    assert response.status_code == 200
+    url=response.json()["image_url"]
+    assert url.startswith("https://phu-private-photo-studio-staging.onrender.com/api/v1/owned-photo/images/")
+    assert "evil.invalid" not in url
+
+def test_reject_public_request_without_pinned_origin(monkeypatch):
+    monkeypatch.setattr(app, "API_KEY", "offline-only")
+    monkeypatch.setattr(app, "REQUIRE_AUTH", True)
+    monkeypatch.delenv("PHOTOBOOTH_PUBLIC_BASE_URL", raising=False)
+    client=TestClient(app.app, base_url="https://untrusted.example")
+    response=client.post("/api/v1/owned-photo/render",
+        headers={"X-API-Key":"offline-only"},
+        files={"file":("s.png",synthetic_png(),"image/png")})
+    assert response.status_code == 503
+
+def test_reject_insecure_or_malformed_origin_config(monkeypatch):
+    monkeypatch.setattr(app, "API_KEY", "offline-only")
+    monkeypatch.setattr(app, "REQUIRE_AUTH", True)
+    client=TestClient(app.app)
+    for unsafe in ("http://example.com", "https://example.com/x",
+                   "https://name:password@example.com", "https://example.com/?token=x"):
+        monkeypatch.setenv("PHOTOBOOTH_PUBLIC_BASE_URL", unsafe)
+        response=client.post("/api/v1/owned-photo/render",
+            headers={"X-API-Key":"offline-only"},
+            files={"file":("s.png",synthetic_png(),"image/png")})
+        assert response.status_code == 503
