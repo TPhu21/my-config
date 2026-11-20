@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   test-public-host:
-    name: Check Render /health, catalog, templates and PNG preview
+    name: Check Render live APIs including new bridge contract
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -25,7 +25,7 @@ jobs:
         env:
           PHOTO_STUDIO_URL: https://phu-private-photo-studio.onrender.com
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             echo "Checking live backend (attempt $attempt)"
             if python locket-backend/smoke_deploy.py "$PHOTO_STUDIO_URL"; then
               exit 0
