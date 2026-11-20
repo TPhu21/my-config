@@ -19,12 +19,27 @@ from starlette.concurrency import run_in_threadpool
 from templates import TEMPLATES, get_template, preview_image, render_photobooth
 from ai_engine import effect_catalog, edit_photo, model_status
 
-from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 from PIL import Image, ImageEnhance, ImageFilter, ImageFont, ImageOps, ImageDraw, UnidentifiedImageError
 
 app = FastAPI(title="Private Photobooth + AI Backend", version="1.0.0")
+
+
+@app.exception_handler(RequestValidationError)
+async def redact_json_bridge_validation(request: Request, exc: RequestValidationError):
+    """Do not echo uploaded image Base64, tokens or URLs on JSON bridge errors."""
+    if request.url.path == "/api/v1/bridge/render-json":
+        return JSONResponse(
+            {"detail": "Invalid JSON bridge request"},
+            status_code=422,
+            headers={"Cache-Control": "no-store"},
+        )
+    return await request_validation_exception_handler(request, exc)
+
 
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024  # Per image
 MAX_PIXELS = 20_000_000
