@@ -301,8 +301,8 @@ if (ua.includes("Locket")) {
         widget_last_sent_indicator: "false",
         widget_sync_token_reload_mode: "clearTokenNever",
         widget_frame_event: JSON.stringify({
-            uid: "wukong",
-            url: "https://i.postimg.cc/pLFZTTBc/26785de3-b0b8-48bc-a13d-a9315b30a801.png",
+            uid: "wukong2",
+            url: "https://i.postimg.cc/HLVhNL9F/0d22da63-3607-479c-a0a6-228e39f949b9.png",
             use_local_time_zone: true,
             placement: "below",
             start_at: "2020-01-01T00:00:00",
