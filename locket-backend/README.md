@@ -196,3 +196,46 @@ To diagnose the native app separately, enable the read-only
 `locket-contract-probe.sgmodule` briefly on a test account. Disable it after
 reviewing **sanitized** diagnostic logs. No successful in-camera integration
 has been established.
+
+
+## Owned-client Photobooth bridge and privacy-first diagnostics
+
+### FastAPI adapter (deployed on Render)
+
+- `GET /api/v1/bridge/contract`: public, versioned description of **our own** adapter, supported original filter IDs and image response format.
+- `POST /api/v1/bridge/render`: authenticated `multipart/form-data` with required single-image `file`, optional `filter_id` (a template ID from our own catalog), `layout`, `style` and `caption`; returns a **real PNG**. Only filter IDs listed by this backend are accepted.
+- The bridge does **not** connect Locket's private API, act as a reverse proxy, send requests to the third-party VPS, grant Gold, or forward Locket login tokens.
+
+On Windows PowerShell, after deployment (only with a synthetic/test image):
+
+```powershell
+# Enter the real key locally; do NOT commit it, post it or add it to .sgmodule.
+$env:PHOTOBOOTH_API_KEY = "YOUR_PRIVATE_RENDER_KEY"
+curl.exe -X POST "https://phu-private-photo-studio.onrender.com/api/v1/bridge/render" `
+  -H "X-API-Key: $env:PHOTOBOOTH_API_KEY" `
+  -F "file=@C:\\Images\\test.png" `
+  -F "filter_id=pb_holo_4cut" `
+  -F "layout=grid" `
+  -o "ptb-render-test.png"
+Remove-Item Env:\\PHOTOBOOTH_API_KEY
+```
+
+### Testing the real Locket PTB route safely
+
+The developer's `locketmphong.conf` can display and process PTB on the user's device, but its private VPS implementation is **not part of this project**. No source has established its exact image-request contract. Comparing native behavior requires authorization to observe the user's own traffic, sanitized results, and consideration that the developer config may rewrite or reroute requests before an observer sees them.
+
+Use `ptb-contract-v2.sgmodule` as the **only diagnostic module** during the test, not together with the earlier `locket-contract-probe.sgmodule`:
+
+```text
+https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-contract-v2.sgmodule
+```
+
+It only matches named photo-filter endpoints on two official Locket hosts and logs:
+`[PTB-CONTRACT-V2] phase=request action=generateFilteredImage method=POST status=unknown`.
+It never parses request/response bodies, headers or URLs, never includes query strings and performs no network calls. It is read-only. It cannot guarantee all native calls will match; a third-party URL rewrite or another API path can prevent matches.
+
+Use a disposable test account and synthetic photos. Do not trust third-party CA certificates, disable diagnostics when testing is over, and never share full proxy database exports, auth tokens or raw payloads. This module does not create PTB buttons or alter Locket's Remote Config.
+
+### Completion criteria
+
+(1) Own API returns PNG from a synthetic image; (2) sanitized metadata identifies an actual authorized native endpoint and response behavior; (3) a permitted integration mechanism is demonstrated; (4) on-device in-app PTB works without proxying account/entitlement traffic. Until then, **in-app integration is unverified**.
