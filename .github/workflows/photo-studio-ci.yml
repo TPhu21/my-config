@@ -4,6 +4,7 @@ on:
     paths:
       - 'locket-backend/**'
       - 'render.yaml'
+      - 'locket-personal.js'
       - '.github/workflows/photo-studio-ci.yml'
   pull_request:
     paths:
@@ -35,6 +36,9 @@ jobs:
       - name: Test isolated native PTB catalog experiment
         working-directory: locket-backend
         run: node tests/test_ptb_catalog.cjs
+      - name: Test merged personal PTB preserves existing configuration
+        working-directory: locket-backend
+        run: node tests/test_personal_ptb_merged.cjs
 
       - name: Smoke test running FastAPI (including a real PNG render)
         working-directory: locket-backend
