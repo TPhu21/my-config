@@ -13,7 +13,7 @@
       if (typeof $notification !== 'undefined' && $notification && typeof $notification.post === 'function') {
         // On iPhone only the THIRD field is consistently visible. Put the actual data there.
         $notification.post('PTB V4 · ' + title, 'Chỉ thông tin cấu trúc, không lấy tài khoản', details);
-        if (typeof $persistentStore !== 'undefined') $persistentStore.write(key === '' ? '' : '1', key);
+        if (typeof $persistentStore !== 'undefined') $persistentStore.write('1', key);
       }
     } catch (_) {}
   }
