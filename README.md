@@ -15,3 +15,17 @@ Cấu hình cá nhân và **Private Photo Studio** (FastAPI Photobooth).
 **Bảo mật:** Không đăng khóa API lên GitHub. Backend là ứng dụng xử lý ảnh độc lập, **chưa được chứng minh tương thích với camera Locket**, và không cấp quyền Gold. Không trỏ RevenueCat, token đăng nhập hoặc API tài khoản Locket sang backend này.
 
 Mã nguồn: [locket-backend/](locket-backend/).
+
+
+## Kiểm chứng deployment (không gửi ảnh riêng tư)
+
+Sau khi Render báo Live, dùng đúng URL Render cung cấp:
+
+```powershell
+cd locket-backend
+$env:PHOTOBOOTH_API_KEY = "<khóa-riêng-trong-Render-Environment>"
+python smoke_deploy.py https://<TEN-SERVICE-THUC-TE>.onrender.com
+Remove-Item Env:\PHOTOBOOTH_API_KEY
+```
+
+Script tự kiểm tra `/health`, `/api/v1/catalog`, danh sách template, ảnh preview và yêu cầu tạo Photobooth bằng **4 ảnh giả lập**. Nó không tải ảnh cá nhân, không ghi key, không gọi API Locket. GitHub Actions cũng chạy phép thử đầu-cuối này trên backend cục bộ sau mỗi thay đổi.
