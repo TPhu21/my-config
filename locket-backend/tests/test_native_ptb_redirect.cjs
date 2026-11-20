@@ -10,6 +10,7 @@ function invoke(url, body, headers) {
     $notification: {post: (...args) => notice.push(args)},
     $persistentStore: {read: () => null, write: () => true}
   }, {timeout: 1000});
+  if (url.includes('generateFilteredImage')) assert.ok(notice.some(x=>x.includes('HOOK_ENTERED')), 'missing versioned request heartbeat');
   if (result && result.url) assert.ok(notice.some(x=>x.includes('REDIRECT_REQUESTED')));
   return result;
 }
@@ -46,4 +47,4 @@ const wrong = invoke('https://api.locketcamera.com/postMomentV2',{filter_id:'pho
 assert.deepStrictEqual(Object.keys(wrong),[]);
 const noBody = invoke(original, {filter_id:'photobooth_4cut'}, {});
 assert.deepStrictEqual(Object.keys(noBody), []);
-console.log('PASS native PTB scoped redirect, credential stripping and opt-in notifications');
+console.log('PASS native PTB redirect, per-request heartbeat, alias parsing and credential stripping');
