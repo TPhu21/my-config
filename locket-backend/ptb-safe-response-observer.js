@@ -59,6 +59,30 @@
           }
           info += "; urls(root)={" + urlSummary(parsed) + "}; urls(result)={" +
                   urlSummary(root) + "}; urls(data)={" + urlSummary(data) + "}";
+          // Compare candidate HTTPS URLs in memory only. The A/B/C codes are
+          // equality groups, never URLs, hashes, hosts or image bytes.
+          var seen = [];
+          var labels = [];
+          function groupShape(node) {
+            var codes = [];
+            urlKeys.forEach(function(k) {
+              if (!Object.prototype.hasOwnProperty.call(node, k)) return;
+              var val = node[k];
+              if (typeof val !== "string" || !/^https:\/\//i.test(val)) {
+                codes.push("-");
+                return;
+              }
+              var idx = seen.indexOf(val);
+              if (idx < 0) { idx = seen.length; seen.push(val); }
+              codes.push("ABCDEFGHJKLMNPQRSTUVWXYZ".charAt(idx) || "?");
+            });
+            return codes.join("");
+          }
+          var groupRoot = groupShape(parsed);
+          var groupResult = groupShape(root);
+          var groupData = groupShape(data);
+          info += "; link_groups=" + seen.length +
+                  "; aliases(root/result/data)=" + groupRoot + "/" + groupResult + "/" + groupData;
           var n = root.status;
           info += "; app_status=" + (typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= 999 ? String(n) : "unknown");
           if (Array.isArray(root.errors)) info += "; errors_count=" + Math.min(root.errors.length, 99);
