@@ -1,11 +1,9 @@
-#!name=PTB Diagnostic V4 - READ ONLY
-#!desc=Read-only PTB Firebase/getFilters metadata notifications. No modified responses, no account or photo data.
+#!name=PTB getFilters Response - ISOLATED TEST
+#!desc=Experimental response-level PTB template catalog; no subscriber/auth/AI/photo request changes. Disable after test.
 
 [MITM]
 enable = true
-hostname = %APPEND% api.locketcamera.com, firebaseremoteconfig.googleapis.com
+hostname = %APPEND% api.locketcamera.com
 
 [Script]
-ptb_rc_req_v3 = type=http-request, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[^/]+\/namespaces\/[^/]+:fetch(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-firebase-observer-v4.js?version=4, requires-body=false, timeout=10
-ptb_rc_resp_v3 = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[^/]+\/namespaces\/[^/]+:fetch(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-firebase-observer-v4.js?version=4, requires-body=true, max-size=1048576, timeout=15
-ptb_getfilters_resp_v3 = type=http-response, pattern=^https:\/\/api\.locketcamera\.com\/getFilters(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-firebase-observer-v4.js?version=4, requires-body=true, max-size=1048576, timeout=15
+ptb_getfilters_response = type=http-response, pattern=^https:\/\/api\.locketcamera\.com\/getFilters(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-getfilters-response-compat.js?trial=20261120a, requires-body=true, max-size=1048576, timeout=15
