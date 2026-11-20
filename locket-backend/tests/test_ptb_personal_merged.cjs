@@ -13,7 +13,7 @@ assert.match(moduleText,/projects\\\/\[0-9\]\+/);
 assert.equal((moduleText.match(/type=http-response/g)||[]).length,3);
 assert.equal((moduleText.match(/type=http-request/g)||[]).length,1);
 assert.equal(moduleText.includes('api.revenuecat.com'),false);
-assert.equal(moduleText.includes('us-central1-locket-4252a.cloudfunctions.net'),false);
+assert.equal(moduleText.includes('163.223.9.98'),false);
 assert.ok(combined.startsWith(source.slice(0,5000)));
 assert.ok(combined.length>source.length);
 const synthetic={state:'UPDATE',entries:{keep_key:'unchanged',feature_gates:JSON.stringify({existing_gate:'disabled'}),camera_filter_config:JSON.stringify({sheet_filters:[{title:{en:'Goofy'},filter_ids:['okay_wig']}],picker_filters:['okay_wig'],remote_filters:[]})}};
