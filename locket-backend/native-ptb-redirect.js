@@ -31,17 +31,51 @@
       return;
     }
     var content = JSON.parse(String(req.body || ""));
-    // Inspect only schema/enum names; never log an image URL, prompt, or token.
-    var id = String(content.filter_id || content.filterId || "");
-    var filterType = String(content.filter_type || content.filterType || "");
-    var photoField = typeof content.image_url === "string" ? "image_url" :
-                     typeof content.imageUrl === "string" ? "imageUrl" : "";
-    var safeKeys = Object.keys(content).filter(function(k) {
-      return /^(filter_id|filterId|filter_type|filterType|image_url|imageUrl|prompt)$/i.test(k);
-    }).sort();
-    // One-time reason codes indicate which part of the Locket contract changed.
-    if (!id) {
-      mark("NO_FILTER_ID keys=" + safeKeys.join(","));
+    if (!content || typeof content !== "object" || Array.isArray(content)) {
+      mark("BODY_NOT_OBJECT"); $done({}); return;
+    }
+    // Locate likely nested Locket request shapes without revealing values.
+    // Stop after two nesting levels; never traverse photo strings.
+    var candidates = [{value:content, path:"root"}];
+    ["data","payload","request","input","params","result"].forEach(function(k) {
+      if (content[k] && typeof content[k] === "object" && !Array.isArray(content[k])) {
+        candidates.push({value:content[k], path:k});
+        ["data","payload","request","input","params"].forEach(function(childKey) {
+          var child=content[k][childKey];
+          if (child && typeof child === "object" && !Array.isArray(child)) {
+            candidates.push({value:child, path:k+"."+childKey});
+          }
+        });
+      }
+    });
+    function getField(obj, keys) {
+      for (var i=0; i<keys.length; i++) if (typeof obj[keys[i]] === "string" && obj[keys[i]]) return obj[keys[i]];
+      return "";
+    }
+    var found=null, id="", filterType="", imageUrl="";
+    candidates.forEach(function(candidate) {
+      if (found) return;
+      var value=candidate.value;
+      var maybeId=getField(value, ["filter_id","filterId","filterID","id"]);
+      var maybeImage=getField(value, ["image_url","imageUrl","source_image_url","sourceImageUrl"]);
+      if (maybeId && maybeImage) {
+        found=candidate.path;
+        id=maybeId;
+        imageUrl=maybeImage;
+        filterType=getField(value,["filter_type","filterType"]) || getField(content,["filter_type","filterType"]);
+      }
+    });
+    if (!found) {
+      // Only key names at known levels, not prompt, URL, auth or photo values.
+      var topKeys=Object.keys(content).filter(function(k) {
+        return /^[a-zA-Z_]{1,28}$/.test(k);
+      }).sort().slice(0,12);
+      var shape=candidates.slice(1,4).map(function(v) {
+        return v.path+":"+Object.keys(v.value).filter(function(k) {
+          return /^[a-zA-Z_]{1,28}$/.test(k);
+        }).sort().slice(0,8).join(",");
+      }).join(";");
+      mark("NO_FILTER_ID schema=" + topKeys.join(",") + (shape?" nested="+shape:""));
       $done({});
       return;
     }
@@ -56,24 +90,16 @@
       $done({});
       return;
     }
-    if (filterType !== "normal") {
+    if (filterType && filterType !== "normal") {
       mark("FILTER_TYPE_NOT_NORMAL");
       $done({});
       return;
     }
-    if (!photoField) {
-      mark("NO_IMAGE_URL keys=" + safeKeys.join(","));
-      $done({});
-      return;
-    }
-    // Canonicalize recognized aliases so the owned backend accepts the request.
-    content.filter_id = id;
-    content.filter_type = filterType;
-    content.image_url = content[photoField];
-    var sanitizedBody = JSON.stringify({
-      filter_id: content.filter_id,
-      filter_type: content.filter_type,
-      image_url: content.image_url
+    // The source is deliberately reduced to the fields understood by Render.
+    var sanitizedBody=JSON.stringify({
+      filter_id:id,
+      filter_type:"normal",
+      image_url:imageUrl
     });
     var headers = {};
     var sourceHeaders = req.headers || {};
