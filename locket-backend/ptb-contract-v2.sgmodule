@@ -1,0 +1,10 @@
+#!name=PTB Contract Observer V2 - METADATA ONLY
+#!desc=Observe named Locket photo-filter endpoints; no body, tokens, photos, redirects, or modifications. Disable after diagnostic.
+
+[MITM]
+enable = true
+hostname = %APPEND% api.locketcamera.com, us-central1-locket-4252a.cloudfunctions.net
+
+[Script]
+ptb_contract_v2_req = type=http-request, pattern=^https:\/\/(api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/(generateFilteredImage|generateFilter|applyFilter|createOverlay|getFilters|generatePhotobooth|photobooth)([/?].*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-contract-v2.js, requires-body=false, timeout=10
+ptb_contract_v2_resp = type=http-response, pattern=^https:\/\/(api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/(generateFilteredImage|generateFilter|applyFilter|createOverlay|getFilters|generatePhotobooth|photobooth)([/?].*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-contract-v2.js, requires-body=false, timeout=10
