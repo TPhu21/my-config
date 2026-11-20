@@ -1,4 +1,5 @@
-# Blueprint file at TPhu21/my-config repository root
+# Blueprint for standalone private Photobooth API.
+# Quick deploy: https://render.com/deploy?repo=https://github.com/TPhu21/my-config
 services:
   - type: web
     name: phu-private-photo-studio
@@ -15,4 +16,4 @@ services:
       - key: PHOTOBOOTH_REQUIRE_AUTH
         value: "1"
       - key: PHOTOBOOTH_API_KEY
-        sync: false
+        generateValue: true
