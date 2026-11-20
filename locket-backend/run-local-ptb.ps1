@@ -25,12 +25,41 @@ if (-not (Test-Path $work)) { [void](New-Item -ItemType Directory -Path $work) }
 $pythonFile = Join-Path $work "local_locket_sdk_bridge.py"
 $scriptUrl = "https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/local_locket_sdk_bridge.py"
 Invoke-WebRequest -Uri $scriptUrl -OutFile $pythonFile
-$py = Get-Command py -ErrorAction SilentlyContinue
-if (-not $py) { throw "Python launcher 'py' not found. Install Python 3.11 first." }
-$venvPython = Join-Path $work ".venv\Scripts\python.exe"
+# Prefer installed Python 3.11-3.13, but never launch a Microsoft Store alias.
+# py -3.11 fails on systems that have a different compatible minor version.
+$venvDir = Join-Path $work ".venv"
+$venvPython = Join-Path $venvDir "Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $venvPython)) {
-  & py -3.11 -m venv (Join-Path $work ".venv")
-  if ($LASTEXITCODE -ne 0) { throw "Could not create Python 3.11 venv." }
+  $chosen = $null
+  $launcher = Get-Command py -ErrorAction SilentlyContinue
+  if ($launcher) {
+    foreach ($version in @("3.11", "3.12", "3.13", "3.10")) {
+      $candidate = & py "-$version" -c "import sys; print(sys.executable)" 2>$null
+      if ($LASTEXITCODE -eq 0 -and $candidate) {
+        $chosen = @("py", "-$version")
+        break
+      }
+    }
+  }
+  if (-not $chosen) {
+    foreach ($candidateName in @("python", "python3")) {
+      $candidateCmd = Get-Command $candidateName -ErrorAction SilentlyContinue
+      if (-not $candidateCmd -or $candidateCmd.Source -match "WindowsApps") { continue }
+      $versionOk = & $candidateCmd.Source -c "import sys; sys.exit(0 if (3,10) <= sys.version_info[:2] <= (3,13) else 1)" 2>$null
+      if ($LASTEXITCODE -eq 0) {
+        $chosen = @($candidateCmd.Source)
+        break
+      }
+    }
+  }
+  if (-not $chosen) {
+    throw "No compatible Python 3.10-3.13 found. Install Python 3.11 with: winget install --id Python.Python.3.11 -e"
+  }
+  $pythonCommand = $chosen[0]
+  $pythonArgs = @()
+  if ($chosen.Count -gt 1) { $pythonArgs = @($chosen[1]) }
+  & $pythonCommand @pythonArgs -m venv $venvDir
+  if ($LASTEXITCODE -ne 0) { throw "Could not create Python virtual environment." }
 }
 & $venvPython -m pip install -q requests
 if ($LASTEXITCODE -ne 0) { throw "Could not install requests." }
