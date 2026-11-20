@@ -30,6 +30,22 @@ jobs:
         working-directory: locket-backend
         run: node tests/test_contract_probe.cjs
 
+      - name: Smoke test running FastAPI (including a real PNG render)
+        working-directory: locket-backend
+        shell: bash
+        env:
+          PHOTOBOOTH_REQUIRE_AUTH: "1"
+          PHOTOBOOTH_API_KEY: ci-nonproduction-synthetic-secret
+        run: |
+          python -m uvicorn app:app --host 127.0.0.1 --port 8188 >/tmp/photobooth-uvicorn.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8188/health >/dev/null; then break; fi
+            sleep 1
+          done
+          python smoke_deploy.py http://127.0.0.1:8188
+
   launcher-syntax:
     runs-on: windows-latest
     steps:
