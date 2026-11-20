@@ -1,0 +1,9 @@
+#!name=PTB Catalog Preview - TEST ONLY
+#!desc=Isolated UI catalog compatibility experiment; no image rerouting or purchase/quota changes.
+
+[MITM]
+enable = true
+hostname = %APPEND% firebaseremoteconfig.googleapis.com
+
+[Script]
+ptb_catalog_preview = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-.*, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/locket-ptb-catalog-test.js, requires-body=true, max-size=524288, timeout=30
