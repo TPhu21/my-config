@@ -8,6 +8,19 @@
       $done({});
       return;
     }
+    // One-time local notification proving that the Shadowrocket hook ran.
+    // No request data, device ID, or network telemetry is sent.
+    try {
+      var k = 'PTB_GETFILTERS_HIT_DIAG_20261120_V2';
+      var seen = typeof $persistentStore !== 'undefined' && $persistentStore.read(k) === '1';
+      if (!seen && typeof $notification !== 'undefined' && $notification &&
+          typeof $notification.post === 'function') {
+        $notification.post('PTB DEBUG', 'getFilters script đã chạy', 'Đã bắt đúng request /getFilters');
+        if (typeof $persistentStore !== 'undefined') $persistentStore.write('1', k);
+      }
+    } catch (notificationError) {
+      // Lack of notification permission must never affect the request.
+    }
     var samples = [
       ['photobooth_4cut', 'Classic Film'],
       ['photobooth_cute', 'Pastel Cute'],
