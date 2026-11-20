@@ -1,0 +1,20 @@
+# Isolated staging Blueprint. Create a NEW Render Blueprint from this path.
+# This file is deliberately separate from render.yaml (which deploys production main).
+services:
+  - type: web
+    name: phu-private-photo-studio-staging
+    runtime: python
+    plan: free
+    branch: feature/ptb-native-contract-diagnostics
+    rootDir: locket-backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: PHOTOBOOTH_REQUIRE_AUTH
+        value: "1"
+      - key: PHOTOBOOTH_API_KEY
+        generateValue: true
