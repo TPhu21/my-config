@@ -5,6 +5,8 @@ No Locket API impersonation and no third-party Worker/VPS forwarding.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import io
 import os
 import secrets
@@ -19,6 +21,7 @@ from ai_engine import effect_catalog, edit_photo, model_status
 
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from pydantic import BaseModel, ConfigDict, Field
 from PIL import Image, ImageEnhance, ImageFilter, ImageFont, ImageOps, ImageDraw, UnidentifiedImageError
 
 app = FastAPI(title="Private Photobooth + AI Backend", version="1.0.0")
@@ -239,6 +242,16 @@ def bridge_contract() -> dict:
             "authentication": "X-API-Key required on hosted service",
         },
         "response": {"status": 200, "content_type": "image/png"},
+        "json_bridge": {
+            "method": "POST",
+            "path": "/api/v1/bridge/render-json",
+            "content_type": "application/json",
+            "request_fields": ["image_base64", "filter_id", "layout", "style", "caption"],
+            "response_fields": ["format", "filter_id", "mime_type", "width", "height", "image_base64"],
+            "image_encoding": "standard-base64-no-data-uri-prefix",
+            "authentication": "X-API-Key required on hosted service",
+            "native_locket_protocol": False,
+        },
         "filters": [
             {
                 "filter_id": t.id, "name": t.name,
@@ -272,6 +285,72 @@ async def bridge_render(
         render_photobooth, [photo] * 4, layout, style, caption, filter_id
     )
     return png_response(collage, f"bridge-{filter_id}-{layout}.png")
+
+
+class JSONBridgeInput(BaseModel):
+    """A documented *owned-client* format, not an imitation of Locket API."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    filter_id: str = Field(default="photobooth_4cut", min_length=1, max_length=96)
+    image_base64: str = Field(min_length=4, max_length=4 * ((MAX_UPLOAD_BYTES + 2) // 3))
+    layout: str = Field(default="grid")
+    style: str = Field(default="classic")
+    caption: str = Field(default="PHOTOBOOTH", max_length=60)
+
+
+@app.post("/api/v1/bridge/render-json")
+async def bridge_render_json(
+    payload: JSONBridgeInput,
+    x_api_key: Annotated[str | None, Header()] = None,
+) -> dict:
+    """Process an allowlisted, base64-encoded image from our own client.
+
+    Authenticated; never fetches remote URLs, redirects to foreign services, forwards
+    account tokens, accepts arbitrary file paths or stores user photos. Locket's
+    undocumented native request/response format remains unverified.
+    """
+    authorize(x_api_key)
+    if payload.layout not in LAYOUTS or payload.style not in STYLES:
+        raise HTTPException(status_code=422, detail="Invalid layout or style")
+    get_template(payload.filter_id)
+
+    try:
+        raw = base64.b64decode(payload.image_base64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise HTTPException(status_code=422, detail="Invalid base64 image") from exc
+    if not raw or len(raw) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Image exceeds 8 MB")
+
+    try:
+        with Image.open(io.BytesIO(raw)) as img:
+            if img.format not in {"JPEG", "PNG", "WEBP"}:
+                raise HTTPException(status_code=415, detail="Unsupported image format")
+            if max(img.size) > MAX_SIDE or img.width * img.height > MAX_PIXELS:
+                raise HTTPException(status_code=413, detail="Image dimensions are too large")
+            image = ImageOps.exif_transpose(img)
+            image.load()
+            photo = image.convert("RGB")
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
+        raise HTTPException(status_code=400, detail="Corrupt or invalid image") from exc
+
+    rendered = await run_in_threadpool(
+        render_photobooth,
+        [photo] * 4,
+        payload.layout,
+        payload.style,
+        payload.caption,
+        payload.filter_id,
+    )
+    output = io.BytesIO()
+    rendered.save(output, format="PNG", optimize=True)
+    return {
+        "format": "private-photo-studio-json-v1",
+        "filter_id": payload.filter_id,
+        "mime_type": "image/png",
+        "width": rendered.width,
+        "height": rendered.height,
+        "image_base64": base64.b64encode(output.getvalue()).decode("ascii"),
+    }
 
 
 @lru_cache(maxsize=1)
