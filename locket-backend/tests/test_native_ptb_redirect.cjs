@@ -28,6 +28,12 @@ assert.ok(valid && /phu-private-photo-studio-staging\.onrender\.com\/generateFil
 assert.ok(!Object.keys(valid.headers).some(k=>/authorization|cookie|appcheck/i.test(k)));
 assert.strictEqual(valid.headers.Host,'phu-private-photo-studio-staging.onrender.com');
 assert.strictEqual(valid.headers['Content-Type'],'application/json');
+const forwarded = JSON.parse(valid.body);
+assert.deepStrictEqual(Object.keys(forwarded).sort(), ['filter_id','filter_type','image_url']);
+const aliases = invoke(original,{filterId:'photobooth_4cut',filterType:'normal',imageUrl:'https://firebasestorage.googleapis.com/x',prompt:'NOT_FORWARDED'}, {});
+assert.ok(aliases && aliases.url);
+assert.strictEqual(JSON.parse(aliases.body).filter_id,'photobooth_4cut');
+assert.ok(!JSON.parse(aliases.body).prompt);
 const other = invoke(original,{filter_id:'bowling_ball',filter_type:'normal',image_url:'https://firebasestorage.googleapis.com/a'}, {});
 assert.deepStrictEqual(Object.keys(other),[]);
 const wrong = invoke('https://api.locketcamera.com/postMomentV2',{filter_id:'photobooth_4cut',filter_type:'normal',image_url:'https://firebasestorage.googleapis.com/a'}, {});
