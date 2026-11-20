@@ -1,12 +1,11 @@
-#!name=PTB Diagnostic V3 - Fetch vs getFilters
-#!desc=Isolated PTB experiment and local metadata-only Firebase/getFilters status; no subscription or photo rewrites.
+#!name=PTB Diagnostic V3 - READ ONLY
+#!desc=Read-only PTB Firebase/getFilters metadata notifications. No modified responses, no account or photo data.
 
 [MITM]
 enable = true
 hostname = %APPEND% api.locketcamera.com, firebaseremoteconfig.googleapis.com
 
 [Script]
-ptb_getfilters_preview = type=http-request, pattern=^https:\/\/api\.locketcamera\.com\/getFilters(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-getfilters-test.js?diag=20261120v2, requires-body=false, timeout=15
 ptb_rc_req_v3 = type=http-request, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[^/]+\/namespaces\/[^/]+:fetch(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-firebase-observer-v3.js?version=3, requires-body=false, timeout=10
 ptb_rc_resp_v3 = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[^/]+\/namespaces\/[^/]+:fetch(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-firebase-observer-v3.js?version=3, requires-body=true, max-size=1048576, timeout=15
 ptb_getfilters_resp_v3 = type=http-response, pattern=^https:\/\/api\.locketcamera\.com\/getFilters(\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/ptb-firebase-observer-v3.js?version=3, requires-body=true, max-size=1048576, timeout=15
