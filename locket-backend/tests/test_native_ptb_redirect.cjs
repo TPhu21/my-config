@@ -34,6 +34,12 @@ const aliases = invoke(original,{filterId:'photobooth_4cut',filterType:'normal',
 assert.ok(aliases && aliases.url);
 assert.strictEqual(JSON.parse(aliases.body).filter_id,'photobooth_4cut');
 assert.ok(!JSON.parse(aliases.body).prompt);
+const nested = invoke(original,{data:{filter_id:'photobooth_cute',filter_type:'normal',image_url:'https://firebasestorage.googleapis.com/test.jpg'}}, {});
+assert.ok(nested && nested.url);
+assert.strictEqual(JSON.parse(nested.body).filter_id,'photobooth_cute');
+const doublyNested = invoke(original,{payload:{data:{filterId:'pb_vintage',imageUrl:'https://firebasestorage.googleapis.com/test.jpg'}}}, {});
+assert.ok(doublyNested && doublyNested.url);
+assert.strictEqual(JSON.parse(doublyNested.body).filter_id,'pb_vintage');
 const other = invoke(original,{filter_id:'bowling_ball',filter_type:'normal',image_url:'https://firebasestorage.googleapis.com/a'}, {});
 assert.deepStrictEqual(Object.keys(other),[]);
 const wrong = invoke('https://api.locketcamera.com/postMomentV2',{filter_id:'photobooth_4cut',filter_type:'normal',image_url:'https://firebasestorage.googleapis.com/a'}, {});
