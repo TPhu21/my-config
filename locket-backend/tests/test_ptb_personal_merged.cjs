@@ -65,4 +65,30 @@ for(const agent of ['Firebase/11.0.0 iOS', 'Mozilla/5.0', '']){
   assert.equal(config.remote_filters.length,10);
   assert.equal(JSON.parse(after.entries.feature_gates).longer_video,'enabled');
 }
+const notices=[];
+const cache={};
+function executeWithNotifications(){
+  const outputs=[];
+  vm.runInNewContext(combined, {
+    $request:{
+      url:'https://firebaseremoteconfig.googleapis.com/v1/projects/641029076083/namespaces/firebase:fetch',
+      headers:{'User-Agent':'Firebase/11.0.0',Authorization:'Bearer SECRET_KEY'},
+    },
+    $response:{body:JSON.stringify(synthetic),status:200},
+    $notification:{post:(...args)=>notices.push(args)},
+    $persistentStore:{
+      read:key=>cache[key]||null,
+      write:(value,key)=>{cache[key]=value;return true;}
+    },
+    $done:value=>outputs.push(value)
+  },{timeout:6000});
+  assert.equal(outputs.length,1);
+  const output=JSON.parse(outputs[0].body);
+  assert.equal(JSON.parse(output.entries.camera).gold_max_duration,45);
+}
+executeWithNotifications();
+executeWithNotifications();
+assert.equal(notices.length,1);
+assert.equal(notices[0][2].includes('10 mẫu PTB'),true);
+assert.equal(JSON.stringify(notices).includes('SECRET_KEY'),false);
 console.log('PASS PTB merged personal script: all non-filter settings preserved, 45s retained, PTB shown and no secret leakage');
