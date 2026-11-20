@@ -4,18 +4,15 @@
 // Requires the Render staging feature flag PHOTOBOOTH_NATIVE_BRIDGE_ENABLED=1.
 // Does not hook Gold, unrelated uploads, postMomentV2, or any other Locket path.
 (function () {
-  // One notification per outcome; no URLs, photos, session headers or IDs.
+  // Version heartbeat is intentionally not deduplicated: persistentStore once
+  // suppressed the only diagnostic result on subsequent attempts.
+  var DIAG_VERSION = "PTB_V5_20261121";
   function mark(outcome) {
+    var safe = String(outcome).slice(0, 240);
+    try { if (typeof console !== "undefined" && console.log) console.log(DIAG_VERSION + " " + safe); } catch (_) {}
     try {
-      var key = "PTB_REDIRECT_DIAG_20261121_" + outcome;
-      if (typeof $persistentStore !== "undefined" &&
-          $persistentStore.read(key) === "1") return;
-      if (typeof $notification !== "undefined" &&
-          $notification && typeof $notification.post === "function") {
-        $notification.post("PTB redirect", "Shadowrocket đã chạy script", outcome);
-      }
-      if (typeof $persistentStore !== "undefined") {
-        $persistentStore.write("1", key);
+      if (typeof $notification !== "undefined" && $notification && typeof $notification.post === "function") {
+        $notification.post("PTB redirect " + DIAG_VERSION, "Script executed", safe);
       }
     } catch (_) {}
   }
@@ -24,6 +21,7 @@
     $done({});
     return;
   }
+  mark("HOOK_ENTERED");
   try {
     if (!req.body) {
       mark("BODY_MISSING");
