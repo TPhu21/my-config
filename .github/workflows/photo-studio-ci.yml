@@ -73,6 +73,22 @@ jobs:
         working-directory: locket-backend
         run: node tests/test_native_ptb_redirect.cjs
 
+      - name: Verify staged native PTB feature flag is active
+        if: github.ref == 'refs/heads/feature/ptb-native-contract-diagnostics'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          url = 'https://phu-private-photo-studio-staging.onrender.com/native-ptb/status'
+          with urllib.request.urlopen(url, timeout=35) as r:
+              assert r.status == 200
+              data = json.load(r)
+          assert data['bridge_enabled'] is True, data
+          assert data['mode'] == 'experimental-self-hosted'
+          assert data['native_locket_verified'] is False
+          print('PASS staging /native-ptb/status: enabled experimental bridge')
+          PY
+
       - name: Smoke test running FastAPI (including a real PNG render)
         working-directory: locket-backend
         shell: bash
