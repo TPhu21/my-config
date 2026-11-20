@@ -28,6 +28,11 @@ from PIL import Image, ImageEnhance, ImageFilter, ImageFont, ImageOps, ImageDraw
 
 app = FastAPI(title="Private Photobooth + AI Backend", version="1.0.0")
 
+# Owned-client, opt-in JPEG delivery API. Does not intercept Locket requests.
+from owned_photo_delivery import router as owned_photo_router
+app.include_router(owned_photo_router)
+
+
 
 @app.exception_handler(RequestValidationError)
 async def redact_json_bridge_validation(request: Request, exc: RequestValidationError):
