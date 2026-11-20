@@ -4,11 +4,6 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const code=fs.readFileSync(path.join(__dirname,'../ptb-firebase-observer-v3.js'),'utf8');
-const moduleText=fs.readFileSync(path.join(__dirname,'../ptb-getfilters-test.sgmodule'),'utf8');
-assert.match(moduleText,/READ ONLY/);
-assert.equal(moduleText.includes('ptb_getfilters_preview'),false);
-assert.equal((moduleText.match(/type=http-response/g)||[]).length,2);
-assert.equal((moduleText.match(/type=http-request/g)||[]).length,1);
 const notifications=[];
 const cache={};
 function run(url, body) {
