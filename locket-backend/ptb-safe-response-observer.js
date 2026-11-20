@@ -37,7 +37,11 @@
           }
           var top = keys.map(function (k) { return typed(parsed, k); }).filter(Boolean);
           var inner = keys.map(function (k) { return typed(root, k); }).filter(Boolean);
-          info += "; root={" + top.join(",") + "}; result={" + inner.join(",") + "}";
+          var data = root.data && typeof root.data === "object" && !Array.isArray(root.data) ? root.data : {};
+          var nested = keys.map(function (k) { return typed(data, k); }).filter(Boolean);
+          info += "; root={" + top.join(",") + "}; result={" + inner.join(",") + "}; data={" + nested.join(",") + "}";
+          var n = root.status;
+          info += "; app_status=" + (typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= 999 ? String(n) : "unknown");
           if (Array.isArray(root.errors)) info += "; errors_count=" + Math.min(root.errors.length, 99);
         }
       } catch (_) { info += "; json=unreadable"; }
