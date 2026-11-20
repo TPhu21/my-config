@@ -239,3 +239,46 @@ Use a disposable test account and synthetic photos. Do not trust third-party CA 
 ### Completion criteria
 
 (1) Own API returns PNG from a synthetic image; (2) sanitized metadata identifies an actual authorized native endpoint and response behavior; (3) a permitted integration mechanism is demonstrated; (4) on-device in-app PTB works without proxying account/entitlement traffic. Until then, **in-app integration is unverified**.
+
+
+## Native Photobooth catalog compatibility experiment (not production-ready)
+
+Source comparison (user-supplied `locketmphong_v95.js` versus personal
+`locket-personal.js`):
+
+- The developer script publishes a `camera_filter_config` with `sheet_filters`,
+  `picker_filters` and `remote_filters` data. It also explicitly redirects
+  Cloud Functions requests to a private VPS, which handles photo rendering.
+- The personal script only defines ordinary filter groups and contains no
+  equivalent rendering redirect or Photobooth processing contract.
+- The developer script also changes subscription and quota-related responses;
+  these behaviors are **not** part of our catalog experiment.
+
+Files `locket-ptb-catalog-test.js` and `locket-ptb-catalog-test.sgmodule`
+are a reversible **UI-only hypothesis test**. The script adds a section called
+`PTB Preview (Test)` containing ten original templates supported by Render.
+Preview thumbnails link to public template PNG endpoints on the user's own
+Render server. The script does **not** intercept photo uploads, process images
+inside Locket, bypass AI credits or forward third-party credentials.
+
+**How to isolate it:** Temporarily disable the existing personal module that
+rewrites Firebase Remote Config (and the developer's module), enable only
+`PTB Catalog Preview - TEST ONLY` in a test profile and restart Locket.
+Your usual personal profile is preserved; switch back afterward. Only use a
+disposable test account and never turn on a third-party MITM certificate.
+The experiment may fail to render the UI depending on the Locket app version,
+caching or required server-side filter schema. Do not tap a custom preview
+to upload private photos: no native processing adapter has been verified.
+
+Install URL:
+
+```text
+https://raw.githubusercontent.com/TPhu21/my-config/main/locket-backend/locket-ptb-catalog-test.sgmodule
+```
+
+**Success criterion for this phase only:** a `PTB Preview (Test)` group with
+up to ten thumbnails appears alongside the existing groups in Locket. Even
+if it appears, native filter processing is *not* complete; official photo
+API request/response details and an appropriate authorized integration
+mechanism are still unavailable. Restore your original configuration
+after testing.
