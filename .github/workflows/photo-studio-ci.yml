@@ -69,6 +69,10 @@ jobs:
         working-directory: locket-backend
         run: node tests/test_ptb_image_delivery_observer.cjs
 
+      - name: Test experimental native PTB Shadowrocket redirect
+        working-directory: locket-backend
+        run: node tests/test_native_ptb_redirect.cjs
+
       - name: Smoke test running FastAPI (including a real PNG render)
         working-directory: locket-backend
         shell: bash
