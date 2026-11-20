@@ -13,8 +13,7 @@
     var key='PTB_IMG_OBS_20261120_'+name+'_'+(res?'resp':'req');
     var seen=typeof $persistentStore!=='undefined' && $persistentStore.read(key)==='1';
     if(!seen&&typeof $notification!=='undefined'&&typeof $notification.post==='function'){
-      $notification.post('PTB · API xử lý ảnh',name+' · '+label,
-        host==='api.locketcamera.com'?'Locket API':'Locket Cloud Functions');
+      $notification.post('PTB · API xử lý ảnh',host==='api.locketcamera.com'?'Locket API':'Locket Cloud Functions',name+' · '+label);
       if(typeof $persistentStore!=='undefined')$persistentStore.write('1',key);
     }
   } catch (_){}
