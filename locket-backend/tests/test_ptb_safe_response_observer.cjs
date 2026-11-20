@@ -9,7 +9,7 @@ function run(url, contentType, body) {
     $request: {url},
     $response: {status: 200, headers: {"Content-Type": contentType}, body},
     $notification: {post: (...args) => messages.push(args)},
-    $done: (value) => {assert.deepEqual(value, {}); ended = true;},
+    $done: (value) => {assert.equal(JSON.stringify(value), "{}"); ended = true;},
     console: {log: (x) => messages.push([x])}
   };
   vm.runInNewContext(source, context);
