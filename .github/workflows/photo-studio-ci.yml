@@ -69,6 +69,10 @@ jobs:
         working-directory: locket-backend
         run: node tests/test_ptb_image_delivery_observer.cjs
 
+      - name: Test read-only Locket hook check
+        working-directory: locket-backend
+        run: node tests/test_ptb_hook_check.cjs
+
       - name: Test experimental native PTB Shadowrocket redirect
         working-directory: locket-backend
         run: node tests/test_native_ptb_redirect.cjs
