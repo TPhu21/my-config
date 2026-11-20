@@ -4,4 +4,5 @@
 enable = true
 hostname = %APPEND% 163.223.9.98, us-central1-locket-4252a.cloudfunctions.net
 [Script]
-ptb_safe_response = type=http-response, pattern=^https:\/\/(163\.223\.9\.98|us-central1-locket-4252a\.cloudfunctions\.net)\/generateFilteredImage([?#].*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/ptb-safe-response-observer.js?schema=v4, requires-body=true, max-size=1048576, timeout=10
+ptb_safe_response = type=http-response, pattern=^https:\/\/(163\.223\.9\.98|us-central1-locket-4252a\.cloudfunctions\.net)\/generateFilteredImage([?#].*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/ptb-safe-response-observer.js?schema=v5, requires-body=true, max-size=1048576, timeout=10
+ptb_image_delivery = type=http-response, pattern=^https:\/\/(163\.223\.9\.98|us-central1-locket-4252a\.cloudfunctions\.net)\/ai-filters\/[^?#]+([?#].*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/ptb-image-delivery-observer.js?schema=v1, requires-body=false, timeout=10
