@@ -10,6 +10,7 @@ Only HTTPS remote hosts (or local loopback HTTP) are accepted.
 from __future__ import annotations
 
 import argparse
+import base64
 import io
 import json
 import os
@@ -124,6 +125,30 @@ def main() -> int:
                     raise RuntimeError(f"/api/v1/bridge/render: invalid output dimensions {image.size}")
                 image.verify()
             print("PASS /api/v1/bridge/render (synthetic image, key-protected PNG 834x714)")
+            json_photo = io.BytesIO()
+            Image.new("RGB", (160, 120), "#7bb7d1").save(json_photo, "PNG")
+            payload = json.dumps({
+                "filter_id": "photobooth_4cut",
+                "image_base64": base64.b64encode(json_photo.getvalue()).decode("ascii"),
+                "layout": "grid",
+                "style": "classic",
+                "caption": "SYNTHETIC TEST",
+            }).encode("utf-8")
+            code, kind, raw = fetch(
+                base, "/api/v1/bridge/render-json", body=payload,
+                content_type="application/json", key=key,
+            )
+            if code != 200 or "application/json" not in kind:
+                raise RuntimeError("/api/v1/bridge/render-json: invalid response")
+            json_result = json.loads(raw)
+            image_bytes = base64.b64decode(json_result["image_base64"], validate=True)
+            if not image_bytes.startswith(PNG_MAGIC) or json_result.get("mime_type") != "image/png":
+                raise RuntimeError("/api/v1/bridge/render-json: invalid PNG/base64 output")
+            with Image.open(io.BytesIO(image_bytes)) as image:
+                if image.size != (834, 714):
+                    raise RuntimeError("/api/v1/bridge/render-json: unexpected image size")
+            print("PASS /api/v1/bridge/render-json (synthetic image, authenticated JSON-to-PNG)")
+
 
         else:
             print("SKIP authenticated POST image tests (PHOTOBOOTH_API_KEY not provided)")
