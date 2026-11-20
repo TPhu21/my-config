@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const code = fs.readFileSync(path.join(__dirname, '..', 'ptb-getfilters-response-compat.js'), 'utf8');
 const mod = fs.readFileSync(path.join(__dirname, '..', 'ptb-getfilters-test.sgmodule'), 'utf8');
-assert.ok(mod.includes('PTB Personal + Photobooth - ISOLATED TEST'));
+assert.ok(mod.includes('PTB Personal + Photobooth - COMPAT V2'));
 assert.equal((mod.match(/type=http-response/g) || []).length, 3);
 assert.equal((mod.match(/type=http-request/g) || []).length, 1);
 assert.equal(mod.includes('revenuecat.com'), false);
