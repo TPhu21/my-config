@@ -53,8 +53,10 @@ def _image_source_url(raw: str) -> str:
         _ = p.port
     except ValueError as exc:
         raise HTTPException(422, "Invalid image URL") from exc
-    if (p.scheme.lower() != "https" or not p.hostname or
-            p.hostname.lower() not in ALLOWED_IMAGE_HOSTS or
+    host = (p.hostname or "").lower()
+    if (p.scheme.lower() != "https" or not host or
+            not (host in ALLOWED_IMAGE_HOSTS or
+                 (host.endswith(".locketcamera.com") and host != ".locketcamera.com")) or
             p.username is not None or p.password is not None or
             p.port not in (None, 443) or p.fragment):
         raise HTTPException(422, "Image host is not supported by experimental bridge")
