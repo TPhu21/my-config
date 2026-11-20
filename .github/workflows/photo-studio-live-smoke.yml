@@ -1,0 +1,36 @@
+name: Verify live Render Photo Studio API
+
+on:
+  push:
+    paths:
+      - '.github/workflows/photo-studio-live-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-public-host:
+    name: Check Render /health, catalog, templates and PNG preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Pillow for the existing smoke tester
+        run: python -m pip install "Pillow>=11,<14"
+      - name: Check live public endpoints without credentials or private images
+        env:
+          PHOTO_STUDIO_URL: https://phu-private-photo-studio.onrender.com
+        run: |
+          for attempt in 1 2 3; do
+            echo "Checking live backend (attempt $attempt)"
+            if python locket-backend/smoke_deploy.py "$PHOTO_STUDIO_URL"; then
+              exit 0
+            fi
+            echo "Host may be waking from Render Free sleep; retrying"
+            sleep 15
+          done
+          exit 1
