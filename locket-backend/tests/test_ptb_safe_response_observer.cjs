@@ -27,6 +27,14 @@ assert.ok(result.map(x => x.join(" ")).join(" ").includes("image_url:string"));
 assert.ok(result.map(x => x.join(" ")).join(" ").includes("data={status:number,url:string,image_url:string}"));
 assert.ok(result.map(x => x.join(" ")).join(" ").includes("app_status=200"));
 assert.ok(result.map(x => x.join(" ")).join(" ").includes("urls(data)={url:https-url,image_url:other-string}"));
+assert.ok(result.map(x => x.join(" ")).join(" ").includes("link_groups=1; aliases(root/result/data)=/A/A-"));
+const allSame = "https://example.test/" + sensitive;
+const same = run("https://163.223.9.98/generateFilteredImage", "application/json",
+  JSON.stringify({url:allSame,image_url:allSame,imageUrl:allSame,output_url:allSame,
+    result:{status:200,url:allSame,image_url:allSame,imageUrl:allSame,output_url:allSame,
+      data:{url:allSame,image_url:allSame,imageUrl:allSame,output_url:allSame}}}));
+assert.ok(JSON.stringify(same).includes("link_groups=1; aliases(root/result/data)=AAAA/AAAA/AAAA"));
+assert.ok(!JSON.stringify(same).includes(sensitive));
 assert.ok(!JSON.stringify(result).includes(sensitive));
 assert.deepEqual(run("https://api.revenuecat.com/subscribers/user", "application/json", body), []);
 assert.deepEqual(run("https://163.223.9.98/postMomentV2", "application/json", body), []);
