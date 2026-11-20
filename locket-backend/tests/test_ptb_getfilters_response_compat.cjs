@@ -5,11 +5,11 @@ const path = require('node:path');
 const vm = require('node:vm');
 const code = fs.readFileSync(path.join(__dirname, '..', 'ptb-getfilters-response-compat.js'), 'utf8');
 const mod = fs.readFileSync(path.join(__dirname, '..', 'ptb-getfilters-test.sgmodule'), 'utf8');
-assert.match(mod, /getFilters Response - ISOLATED TEST/);
-assert.equal((mod.match(/type=http-response/g) || []).length, 1);
+assert.match(mod, /PTB Combined Catalog - ISOLATED TEST/);
+assert.equal((mod.match(/type=http-response/g) || []).length, 2);
 assert.equal((mod.match(/type=http-request/g) || []).length, 0);
 assert.equal(mod.includes('revenuecat.com'), false);
-assert.equal(mod.includes('firebaseremoteconfig'), false);
+assert.equal(mod.includes('firebaseremoteconfig'), true);
 const notifications = [];
 const seen = {};
 function call(url, source, status=200) {
