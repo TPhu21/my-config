@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'..');
 const source=fs.readFileSync(path.join(root,'../locket-personal.js'),'utf8');
 const combined=fs.readFileSync(path.join(root,'ptb-remoteconfig-personal-merged.js'),'utf8');
 const moduleText=fs.readFileSync(path.join(root,'ptb-getfilters-test.sgmodule'),'utf8');
-assert.match(moduleText,/PTB Personal \+ Photobooth - COMPAT V2/);
+assert.match(moduleText,/PTB Personal \+ Photobooth - COMPAT V3/);
 assert.match(moduleText,/ptb-remoteconfig-personal-merged\.js/);
 assert.match(moduleText,/projects\\\/\[\^\/\]\+/);
 assert.equal((moduleText.match(/type=http-response/g)||[]).length,2);
