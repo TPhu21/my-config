@@ -78,11 +78,24 @@ if ([string]::IsNullOrWhiteSpace($Output)) {
   $Output = Join-Path $work ("ptb-preview-" + [guid]::NewGuid().ToString("N") + ".jpg")
 }
 # The API key is used only in this process. Never print it.
-$secret = Read-Host "Render STAGING Photo API key (not Locket credentials)" -AsSecureString
 $bstr = [IntPtr]::Zero
 try {
-  $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
-  $env:PHOTOBOOTH_API_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+  $hasKey = $false
+  for ($attempt = 1; $attempt -le 3; $attempt++) {
+    $secret = Read-Host "Render STAGING Photo API key (paste the key, then press Enter; input is hidden)" -AsSecureString
+    if ($bstr -ne [IntPtr]::Zero) {
+      [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+      $bstr = [IntPtr]::Zero
+    }
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
+    $env:PHOTOBOOTH_API_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+    if (-not [string]::IsNullOrWhiteSpace($env:PHOTOBOOTH_API_KEY)) {
+      $hasKey = $true
+      break
+    }
+    Write-Warning "API key was empty. Copy PHOTOBOOTH_API_KEY from Render Staging Environment and try again."
+  }
+  if (-not $hasKey) { throw "No staging API key was entered. Nothing was sent to Render." }
   $argsPython = @($pythonFile, $fullPhoto, "--template", $Template, "--out", $Output)
   if ($Publish) { $argsPython += @("--session-path", (Resolve-Path -LiteralPath $SessionPath).Path, "--publish") }
   & $venvPython @argsPython
