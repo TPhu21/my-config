@@ -32,6 +32,9 @@ jobs:
       - name: Test metadata-only PTB observer data minimization
         working-directory: locket-backend
         run: node tests/test_ptb_contract_v2.cjs
+      - name: Test isolated native PTB catalog experiment
+        working-directory: locket-backend
+        run: node tests/test_ptb_catalog.cjs
 
       - name: Smoke test running FastAPI (including a real PNG render)
         working-directory: locket-backend
