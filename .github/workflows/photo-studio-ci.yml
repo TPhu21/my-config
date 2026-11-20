@@ -45,6 +45,9 @@ jobs:
       - name: Test combined Firebase PTB catalog trial
         working-directory: locket-backend
         run: node tests/test_ptb_remoteconfig_combined.cjs
+      - name: Test merged personal PTB keeps video and other settings
+        working-directory: locket-backend
+        run: node tests/test_ptb_personal_merged.cjs
       - name: Test read-only PTB Firebase observer V3
         working-directory: locket-backend
         run: node tests/test_ptb_firebase_observer_v3.cjs
