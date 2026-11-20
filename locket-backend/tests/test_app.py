@@ -85,3 +85,40 @@ def test_ai_mock_inference(monkeypatch):
     assert response.status_code == 200
     with Image.open(BytesIO(response.content)) as result:
         assert result.mode == "RGBA"
+
+
+def test_photobooth_from_one_creates_real_png():
+    response = client.post(
+        "/api/v1/photobooth/from-one",
+        files={"file": ("single.png", image_bytes("#95bcdd"), "image/png")},
+        data={"layout": "grid", "style": "vintage", "caption": "ONE SHOT",
+              "template_id": "pb_holo_4cut"},
+    )
+    assert response.status_code == 200, response.text
+    assert response.headers["content-type"] == "image/png"
+    with Image.open(BytesIO(response.content)) as result:
+        assert result.size[0] == 834
+        assert result.size[1] > 500
+
+
+def test_photobooth_from_one_rejects_invalid_input_and_needs_key(monkeypatch):
+    bad_id = client.post(
+        "/api/v1/photobooth/from-one",
+        files={"file": ("one.png", image_bytes(), "image/png")},
+        data={"template_id": "not-a-template"},
+    )
+    assert bad_id.status_code == 422
+
+    import app as server
+    monkeypatch.setattr(server, "API_KEY", "test-single-image-key")
+    denied = client.post(
+        "/api/v1/photobooth/from-one",
+        files={"file": ("one.png", image_bytes(), "image/png")},
+    )
+    assert denied.status_code == 401
+    granted = client.post(
+        "/api/v1/photobooth/from-one",
+        files={"file": ("one.png", image_bytes(), "image/png")},
+        headers={"X-API-Key": "test-single-image-key"},
+    )
+    assert granted.status_code == 200
