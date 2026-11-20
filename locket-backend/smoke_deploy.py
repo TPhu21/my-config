@@ -42,7 +42,7 @@ def fetch(base: str, path: str, *, body: bytes | None = None,
         raise RuntimeError(f"{path}: network error: {exc.reason}") from exc
 
 
-def multipart_test_payload() -> tuple[bytes, str]:
+def multipart_test_payload(*, bridge: bool = False) -> tuple[bytes, str]:
     boundary = "pb-smoke-" + uuid.uuid4().hex
     body = io.BytesIO()
 
@@ -56,11 +56,12 @@ def multipart_test_payload() -> tuple[bytes, str]:
         body.write(data)
         body.write(b"\r\n")
 
-    for idx, color in enumerate(("#ba6d86", "#9ac1e5", "#cce4ba", "#edc38d")):
+    colors = ("#ba6d86",) if bridge else ("#ba6d86", "#9ac1e5", "#cce4ba", "#edc38d")
+    for idx, color in enumerate(colors):
         buffer = io.BytesIO()
         Image.new("RGB", (360, 270), color).save(buffer, "PNG")
-        part("files", buffer.getvalue(), filename=f"synthetic-{idx}.png", mime="image/png")
-    part("template_id", b"basic")
+        part("file" if bridge else "files", buffer.getvalue(), filename=f"synthetic-{idx}.png", mime="image/png")
+    part("filter_id" if bridge else "template_id", b"pb_holo_4cut" if bridge else b"basic")
     part("layout", b"grid")
     part("style", b"classic")
     part("caption", b"SMOKE TEST")
@@ -111,8 +112,21 @@ def main() -> int:
                 if image.width < 400 or image.height < 400:
                     raise RuntimeError("/api/v1/photobooth: invalid output dimensions")
             print("PASS /api/v1/photobooth (4 synthetic images; no private uploads)")
+            bridge_body, bridge_type = multipart_test_payload(bridge=True)
+            code, kind, raw = fetch(
+                base, "/api/v1/bridge/render", body=bridge_body,
+                content_type=bridge_type, key=key,
+            )
+            if code != 200 or "image/png" not in kind or not raw.startswith(PNG_MAGIC):
+                raise RuntimeError("/api/v1/bridge/render: invalid PNG response")
+            with Image.open(io.BytesIO(raw)) as image:
+                if image.size != (834, 714):
+                    raise RuntimeError(f"/api/v1/bridge/render: invalid output dimensions {image.size}")
+                image.verify()
+            print("PASS /api/v1/bridge/render (synthetic image, key-protected PNG 834x714)")
+
         else:
-            print("SKIP POST image test (PHOTOBOOTH_API_KEY not provided)")
+            print("SKIP authenticated POST image tests (PHOTOBOOTH_API_KEY not provided)")
         print("PASS: Photo Studio deployment smoke checks")
         return 0
     except (RuntimeError, ValueError, KeyError, json.JSONDecodeError) as exc:
