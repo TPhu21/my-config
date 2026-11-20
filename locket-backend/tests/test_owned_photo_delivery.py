@@ -33,7 +33,7 @@ def test_secure_create_and_jpeg_download(monkeypatch):
     image=client.get(path)
     assert image.status_code == 200
     assert image.headers["content-type"] == "image/jpeg"
-    assert image.content.startswith(b"\\xff\\xd8\\xff")
+    assert image.content[:3] == bytes([255, 216, 255])
     with Image.open(BytesIO(image.content)) as photo:
         assert photo.format == "JPEG"
         assert photo.size == (834,714)
