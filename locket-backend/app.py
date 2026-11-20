@@ -32,6 +32,10 @@ app = FastAPI(title="Private Photobooth + AI Backend", version="1.0.0")
 from owned_photo_delivery import router as owned_photo_router
 app.include_router(owned_photo_router)
 
+# Sandbox-only observed JSON PTB aliases; not a native Locket integration.
+from native_ptb_sandbox import router as native_ptb_sandbox_router
+app.include_router(native_ptb_sandbox_router)
+
 
 
 @app.exception_handler(RequestValidationError)
