@@ -34,7 +34,10 @@ if (-not (Test-Path -LiteralPath $venvPython)) {
   $launcher = Get-Command py -ErrorAction SilentlyContinue
   if ($launcher) {
     foreach ($version in @("3.11", "3.12", "3.13", "3.10")) {
-      $candidate = & py "-$version" -c "import sys; print(sys.executable)" 2>$null
+      $candidate = $null
+      try {
+        $candidate = & py "-$version" -c "import sys; print(sys.executable)" 2>$null
+      } catch { $candidate = $null }
       if ($LASTEXITCODE -eq 0 -and $candidate) {
         $chosen = @("py", "-$version")
         break
@@ -45,8 +48,12 @@ if (-not (Test-Path -LiteralPath $venvPython)) {
     foreach ($candidateName in @("python", "python3")) {
       $candidateCmd = Get-Command $candidateName -ErrorAction SilentlyContinue
       if (-not $candidateCmd -or $candidateCmd.Source -match "WindowsApps") { continue }
-      $versionOk = & $candidateCmd.Source -c "import sys; sys.exit(0 if (3,10) <= sys.version_info[:2] <= (3,13) else 1)" 2>$null
-      if ($LASTEXITCODE -eq 0) {
+      $versionFound = $false
+      try {
+        & $candidateCmd.Source -c "import sys; sys.exit(0 if (3,10) <= sys.version_info[:2] <= (3,13) else 1)" 2>$null
+        $versionFound = ($LASTEXITCODE -eq 0)
+      } catch { $versionFound = $false }
+      if ($versionFound) {
         $chosen = @($candidateCmd.Source)
         break
       }
