@@ -4,7 +4,12 @@
 // cre dinhduyvinh09
 // ============================================================
 
-var ua = $request.headers["User-Agent"] || $request.headers["user-agent"] || "";
+var ua = ($request.headers && ($request.headers["User-Agent"] || $request.headers["user-agent"])) || "";
+// Firebase SDK may use a non-Locket User-Agent for this numeric-project :fetch.
+// The opt-in module only matches that exact fetch endpoint; enable the original
+// personal config + PTB together for it, rather than silently returning unmodified JSON.
+var remoteConfigFetch = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[0-9]+\/namespaces\/[^/]+:fetch(?:\?.*)?$/i.test(String($request.url || ""));
+if (remoteConfigFetch && !ua.includes("Locket")) ua = "Locket";
 var obj = JSON.parse($response.body);
 
 if (ua.includes("Locket")) {
