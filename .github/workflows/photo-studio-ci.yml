@@ -36,6 +36,9 @@ jobs:
       - name: Test isolated native PTB catalog experiment
         working-directory: locket-backend
         run: node tests/test_ptb_catalog.cjs
+      - name: Test one-endpoint getFilters preview contract
+        working-directory: locket-backend
+        run: node tests/test_ptb_getfilters.cjs
       - name: Test merged personal PTB preserves existing configuration
         working-directory: locket-backend
         run: node tests/test_personal_ptb_merged.cjs
