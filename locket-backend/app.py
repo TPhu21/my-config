@@ -222,6 +222,58 @@ async def photobooth_from_one(
     return png_response(collage, f"photobooth-one-{template_id}-{layout}.png")
 
 
+@app.get("/api/v1/bridge/contract")
+def bridge_contract() -> dict:
+    """Public contract for our own companion client, not Locket's native API."""
+    return {
+        "version": 1,
+        "mode": "independent-photo-studio",
+        "native_locket_integration": False,
+        "upload": {
+            "method": "POST",
+            "path": "/api/v1/bridge/render",
+            "content_type": "multipart/form-data",
+            "file_field": "file",
+            "filter_field": "filter_id",
+            "optional_fields": ["layout", "style", "caption"],
+            "authentication": "X-API-Key required on hosted service",
+        },
+        "response": {"status": 200, "content_type": "image/png"},
+        "filters": [
+            {
+                "filter_id": t.id, "name": t.name,
+                "preview_url": t.public()["preview_url"],
+                "suggested_layout": t.suggested_layout,
+            } for t in TEMPLATES
+        ],
+    }
+
+
+@app.post("/api/v1/bridge/render", response_class=Response)
+async def bridge_render(
+    file: Annotated[UploadFile, File()],
+    filter_id: Annotated[str, Form()] = "photobooth_4cut",
+    layout: Annotated[str, Form()] = "grid",
+    style: Annotated[str, Form()] = "classic",
+    caption: Annotated[str, Form()] = "PHOTOBOOTH",
+    x_api_key: Annotated[str | None, Header()] = None,
+) -> Response:
+    """Render one uploaded image with one of our explicitly supported filter IDs.
+
+    This is an owned-client API. It deliberately does not proxy remote URLs,
+    forward Locket credentials, emulate an undocumented endpoint or fake results.
+    """
+    authorize(x_api_key)
+    if layout not in LAYOUTS or style not in STYLES or len(caption) > 60:
+        raise HTTPException(status_code=422, detail="Invalid layout, style or caption")
+    get_template(filter_id)  # Explicit allowlist; rejects arbitrary IDs.
+    photo = await load_photo(file)
+    collage = await run_in_threadpool(
+        render_photobooth, [photo] * 4, layout, style, caption, filter_id
+    )
+    return png_response(collage, f"bridge-{filter_id}-{layout}.png")
+
+
 @lru_cache(maxsize=1)
 def ai_session():
     from rembg import new_session  # Optional package, imported only on AI route
