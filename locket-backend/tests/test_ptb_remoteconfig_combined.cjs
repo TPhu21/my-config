@@ -5,7 +5,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const script=fs.readFileSync(path.join(__dirname,'../ptb-remoteconfig-combined.js'),'utf8');
 const moduleText=fs.readFileSync(path.join(__dirname,'../ptb-getfilters-test.sgmodule'),'utf8');
-assert.match(moduleText,/PTB Personal + Photobooth - ISOLATED TEST/);
+assert.ok(moduleText.includes('PTB Personal + Photobooth - ISOLATED TEST'));
 assert.equal((moduleText.match(/type=http-response/g)||[]).length,2);
 assert.equal((moduleText.match(/type=http-request/g)||[]).length,0);
 assert.equal(moduleText.includes('api.revenuecat.com'),false);
