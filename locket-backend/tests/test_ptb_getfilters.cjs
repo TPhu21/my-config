@@ -14,6 +14,23 @@ function execute(url) {
  return events[0];
 }
 const res=execute('https://api.locketcamera.com/getFilters');
+// Diagnostic notification should be local, rate-limited and free from request data.
+const alerts=[];
+const cache={};
+function diag(){
+ const out=[];
+ vm.runInNewContext(code,{
+  $request:{url:'https://api.locketcamera.com/getFilters',headers:{Authorization:'SECRET'}},
+  $notification:{post:(...args)=>alerts.push(args)},
+  $persistentStore:{read:key=>cache[key]||null,write:(value,key)=>{cache[key]=value;return true;}},
+  $done:result=>out.push(result)
+ },{timeout:1000});
+ return out[0];
+}
+diag();diag();
+assert.equal(alerts.length,1);
+assert.match(alerts[0].join(' '),/getFilters/);
+assert.equal(alerts[0].join(' ').includes('SECRET'),false);
 assert.equal(res.response.status,200);
 const j=JSON.parse(res.response.body);
 assert.equal(j.result.status,200);
