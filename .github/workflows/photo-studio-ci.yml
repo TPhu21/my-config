@@ -48,6 +48,9 @@ jobs:
       - name: Test merged personal PTB keeps video and other settings
         working-directory: locket-backend
         run: node tests/test_ptb_personal_merged.cjs
+      - name: Test passive PTB image API status observer
+        working-directory: locket-backend
+        run: node tests/test_ptb_image_api_status.cjs
       - name: Test read-only PTB Firebase observer V3
         working-directory: locket-backend
         run: node tests/test_ptb_firebase_observer_v3.cjs
