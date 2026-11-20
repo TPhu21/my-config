@@ -26,6 +26,7 @@ assert.ok(result.length > 0);
 assert.ok(result.map(x => x.join(" ")).join(" ").includes("image_url:string"));
 assert.ok(result.map(x => x.join(" ")).join(" ").includes("data={status:number,url:string,image_url:string}"));
 assert.ok(result.map(x => x.join(" ")).join(" ").includes("app_status=200"));
+assert.ok(result.map(x => x.join(" ")).join(" ").includes("urls(data)={url:https-url,image_url:other-string}"));
 assert.ok(!JSON.stringify(result).includes(sensitive));
 assert.deepEqual(run("https://api.revenuecat.com/subscribers/user", "application/json", body), []);
 assert.deepEqual(run("https://163.223.9.98/postMomentV2", "application/json", body), []);
