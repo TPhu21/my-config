@@ -122,3 +122,45 @@ def test_photobooth_from_one_rejects_invalid_input_and_needs_key(monkeypatch):
         headers={"X-API-Key": "test-single-image-key"},
     )
     assert granted.status_code == 200
+
+
+def test_companion_bridge_contract_and_image():
+    contract_response = client.get("/api/v1/bridge/contract")
+    assert contract_response.status_code == 200
+    contract = contract_response.json()
+    assert contract["native_locket_integration"] is False
+    assert contract["upload"]["file_field"] == "file"
+    assert any(item["filter_id"] == "pb_holo_4cut" for item in contract["filters"])
+    photo = client.post(
+        "/api/v1/bridge/render",
+        files={"file": ("safe-sample.png", image_bytes("#c3d5ea"), "image/png")},
+        data={"filter_id": "pb_holo_4cut", "layout": "grid", "style": "noir", "caption": "TEST"},
+    )
+    assert photo.status_code == 200, photo.text
+    assert photo.headers["content-type"] == "image/png"
+    assert photo.content.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+    with Image.open(BytesIO(photo.content)) as image:
+        assert image.size[0] == 834
+
+
+def test_companion_bridge_rejects_unknown_filter_and_requires_api_key(monkeypatch):
+    wrong = client.post(
+        "/api/v1/bridge/render",
+        files={"file": ("test.png", image_bytes(), "image/png")},
+        data={"filter_id": "unrecognized-filter"},
+    )
+    assert wrong.status_code == 422
+    import app as server
+    monkeypatch.setattr(server, "API_KEY", "integration-secret-for-tests")
+    denied = client.post(
+        "/api/v1/bridge/render",
+        files={"file": ("test.png", image_bytes(), "image/png")},
+    )
+    assert denied.status_code == 401
+    accepted = client.post(
+        "/api/v1/bridge/render",
+        headers={"X-API-Key": "integration-secret-for-tests"},
+        files={"file": ("test.png", image_bytes(), "image/png")},
+        data={"filter_id": "photobooth_4cut"},
+    )
+    assert accepted.status_code == 200
