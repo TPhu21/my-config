@@ -14,6 +14,7 @@ A **self-hosted, independent** image editing app. It does not copy the private `
 | Preview a template without uploads | `GET /api/v1/templates/{id}/preview?layout=strip` | Always |
 | Filter JPEG/PNG/WebP | `POST /api/v1/filter` | Always |
 | Photobooth, four photos and 11 templates | `POST /api/v1/photobooth` | Always |
+| Photobooth from one uploaded photo (4 repeated panels) | `POST /api/v1/photobooth/from-one` | Always; requires API key when deployed |
 | Remove background with local U2-Net (rembg) | `POST /api/v1/ai/remove-background` | Optional CPU AI |
 | Local prompt-guided image editing | `POST /api/v1/ai/edit` | Optional large AI model, CUDA recommended |
 | AI effects catalog and engine status | `GET /api/v1/ai/effects` | Always |
@@ -169,3 +170,29 @@ On an iPhone, the Shadowrocket and Tailscale VPN tunnels may conflict. Test Tail
 ## iPhone HTTPS deployment
 
 The repository root contains `render.yaml` for an optional Render Blueprint. It deploys CPU-only Photobooth / color filters with API-key auth and an installable Safari Home Screen web app. Read [IOS-LOCKET-INTEGRATION.md](./IOS-LOCKET-INTEGRATION.md) for step-by-step deployment and log viewing. This is a sharing/import workflow, **not direct Locket camera integration**.
+
+## Status: Locket personal config vs Render Photo Studio
+
+The personal Shadowrocket module at `../locket-personal.sgmodule` references
+`../locket-personal.js`, which currently lists the default Goofy, Looks,
+Celebrate, Cute, Costumes and Holidays camera filters. It **does not** register
+the 11 Photo Studio templates as native Locket effects. Neither the module
+nor the web editor redirects app login, subscription or upload traffic to Render.
+
+The Render service has an authenticated companion API:
+`POST /api/v1/photobooth/from-one`, accepting **one** JPG/PNG/WebP field
+named `file`, plus optional `template_id`, `layout`, `style`, `caption`.
+It creates a four-panel PNG using four copies of the image. This can be tested
+independently, but it is **not a proven adapter for Locket's undocumented
+native Photobooth protocol**. Production integration requires an authorized,
+verified request/response contract, including response media type and
+authentication design. Never embed `PHOTOBOOTH_API_KEY` in a public Shadowrocket
+module, and do not proxy Locket credentials or private images through a
+third-party server.
+
+Example: `curl.exe -X POST https://phu-private-photo-studio.onrender.com/api/v1/photobooth/from-one -H "X-API-Key: <your-secret>" -F "file=@photo.png" -F "template_id=pb_holo_4cut" -F "layout=grid" -o output.png`
+
+To diagnose the native app separately, enable the read-only
+`locket-contract-probe.sgmodule` briefly on a test account. Disable it after
+reviewing **sanitized** diagnostic logs. No successful in-camera integration
+has been established.
