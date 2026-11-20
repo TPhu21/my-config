@@ -138,7 +138,7 @@ def test_companion_bridge_contract_and_image():
     )
     assert photo.status_code == 200, photo.text
     assert photo.headers["content-type"] == "image/png"
-    assert photo.content.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+    assert photo.content.startswith(bytes([137, 80, 78, 71, 13, 10, 26, 10]))
     with Image.open(BytesIO(photo.content)) as image:
         assert image.size[0] == 834
 
