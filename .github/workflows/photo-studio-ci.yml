@@ -42,6 +42,9 @@ jobs:
       - name: Test read-only PTB Firebase observer V3
         working-directory: locket-backend
         run: node tests/test_ptb_firebase_observer_v3.cjs
+      - name: Test iPhone-visible PTB Firebase observer V4
+        working-directory: locket-backend
+        run: node tests/test_ptb_firebase_observer_v4.cjs
       - name: Test merged personal PTB preserves existing configuration
         working-directory: locket-backend
         run: node tests/test_personal_ptb_merged.cjs
