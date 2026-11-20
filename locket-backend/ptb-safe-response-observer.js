@@ -40,6 +40,25 @@
           var data = root.data && typeof root.data === "object" && !Array.isArray(root.data) ? root.data : {};
           var nested = keys.map(function (k) { return typed(data, k); }).filter(Boolean);
           info += "; root={" + top.join(",") + "}; result={" + inner.join(",") + "}; data={" + nested.join(",") + "}";
+          // Classify URL-shaped values without ever printing hosts, paths, queries, tokens, or photos.
+          // "https-url" does not prove that the image can be downloaded.
+          function classifyLink(value) {
+            if (typeof value !== "string") return "non-string";
+            if (!value.trim()) return "empty";
+            if (/^https:\/\//i.test(value)) return "https-url";
+            if (/^http:\/\//i.test(value)) return "http-url";
+            if (/^data:image\//i.test(value)) return "data-uri";
+            if (/^\/[^/]/.test(value)) return "relative-path";
+            return "other-string";
+          }
+          var urlKeys = ["url", "image_url", "imageUrl", "output_url"];
+          function urlSummary(node) {
+            return urlKeys.filter(function(k) {
+              return Object.prototype.hasOwnProperty.call(node, k);
+            }).map(function(k) { return k + ":" + classifyLink(node[k]); }).join(",");
+          }
+          info += "; urls(root)={" + urlSummary(parsed) + "}; urls(result)={" +
+                  urlSummary(root) + "}; urls(data)={" + urlSummary(data) + "}";
           var n = root.status;
           info += "; app_status=" + (typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= 999 ? String(n) : "unknown");
           if (Array.isArray(root.errors)) info += "; errors_count=" + Math.min(root.errors.length, 99);
