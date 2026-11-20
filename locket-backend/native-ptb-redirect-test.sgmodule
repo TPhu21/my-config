@@ -1,4 +1,4 @@
-#!name=Private PTB Native Bridge - EXPERIMENT
+#!name=Private PTB Native Bridge - EXPERIMENT V5
 #!desc=Isolated user-owned Render staging redirect; independent of main Locket personal Gold config; unverified native support.
 #!system=ios
 
@@ -14,4 +14,4 @@ ptb_getfilters = type=http-response, pattern=^https:\/\/api\.locketcamera\.com\/
 ptb_remoteconfig = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[^/]+\/namespaces\/[^/]+:fetch(?:\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/ptb-remoteconfig-combined.js, requires-body=true, max-size=524288, timeout=30
 
 # C. After selecting own PTB, redirect ONLY generation to own Render staging.
-ptb_generate = type=http-request, pattern=^https:\/\/(?:api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/generateFilteredImage(?:\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/native-ptb-redirect.js, requires-body=true, max-size=131072, timeout=60
+ptb_generate_v5 = type=http-request, pattern=^https:\/\/(?:api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/generateFilteredImage(?:\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/native-ptb-redirect.js?v=20261121_v5, requires-body=true, max-size=131072, timeout=60
