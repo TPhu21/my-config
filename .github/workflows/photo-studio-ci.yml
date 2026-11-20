@@ -29,6 +29,9 @@ jobs:
       - name: Test read-only Shadowrocket script
         working-directory: locket-backend
         run: node tests/test_contract_probe.cjs
+      - name: Test metadata-only PTB observer data minimization
+        working-directory: locket-backend
+        run: node tests/test_ptb_contract_v2.cjs
 
       - name: Smoke test running FastAPI (including a real PNG render)
         working-directory: locket-backend
