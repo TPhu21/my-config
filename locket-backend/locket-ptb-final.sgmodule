@@ -1,0 +1,16 @@
+#!name=Locket PTB Personal - Final Candidate
+#!desc=10 personal Photobooth frames, custom image render via own staging; original non-PTB traffic unchanged. Native success unverified.
+#!system=ios
+
+[MITM]
+hostname = %APPEND% api.locketcamera.com, us-central1-locket-4252a.cloudfunctions.net, firebaseremoteconfig.googleapis.com
+
+[Script]
+# Add the 10 PTB choices to Locket's server filter list.
+ptb_final_filters = type=http-response, pattern=^https:\/\/api\.locketcamera\.com\/getFilters(?:\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/ptb-final-getfilters.js, requires-body=true, max-size=524288, timeout=30
+
+# Expose PTB choices through the native camera-filter config.
+ptb_final_camera = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[^/]+\/namespaces\/[^/]+:fetch(?:\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/ptb-final-remoteconfig.js, requires-body=true, max-size=524288, timeout=30
+
+# Redirect only OWN PTB generation. No request logging, no notifications.
+ptb_final_generate = type=http-request, pattern=^https:\/\/(?:api\.locketcamera\.com|us-central1-locket-4252a\.cloudfunctions\.net)\/generateFilteredImage(?:\?.*)?$, script-path=https://raw.githubusercontent.com/TPhu21/my-config/feature/ptb-native-contract-diagnostics/locket-backend/ptb-final-generate.js, requires-body=true, max-size=131072, timeout=60
