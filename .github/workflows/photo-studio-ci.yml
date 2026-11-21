@@ -77,6 +77,10 @@ jobs:
         working-directory: locket-backend
         run: node tests/test_ptb_v7_generate_probe.cjs
 
+      - name: Test final getFilters HTTP status compatibility
+        working-directory: locket-backend
+        run: node tests/test_ptb_final_status.cjs
+
       - name: Verify unified personal and PTB Shadowrocket module
         working-directory: locket-backend
         run: node tests/test_personal_ptb_unified.cjs
