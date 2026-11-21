@@ -9,7 +9,13 @@
     return;
   }
   try {
-    var status = Number(resp.status || resp.statusCode || 200);
+    // Interception engines may expose a numeric code or "HTTP/1.1 200 OK".
+    var statusField = resp.statusCode != null ? resp.statusCode : resp.status;
+    var status = statusField == null ? 200 : Number(statusField);
+    if (!isFinite(status)) {
+      var match = /(?:^|\s)([1-5][0-9]{2})(?:\s|$)/.exec(String(statusField));
+      status = match ? Number(match[1]) : 0;
+    }
     if (status !== 200 || typeof resp.body !== 'string') { $done({}); return; }
     var parsed = JSON.parse(resp.body);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) { $done({}); return; }
