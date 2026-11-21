@@ -28,6 +28,19 @@ from PIL import Image, ImageEnhance, ImageFilter, ImageFont, ImageOps, ImageDraw
 
 app = FastAPI(title="Private Photobooth + AI Backend", version="1.0.0")
 
+# Owned-client, opt-in JPEG delivery API. Does not intercept Locket requests.
+from owned_photo_delivery import router as owned_photo_router
+app.include_router(owned_photo_router)
+
+# Sandbox-only observed JSON PTB aliases; not a native Locket integration.
+from native_ptb_sandbox import router as native_ptb_sandbox_router
+app.include_router(native_ptb_sandbox_router)
+
+# Opt-in shadowrocket native PTB request adapter, default disabled.
+from native_ptb_redirect_bridge import router as native_ptb_redirect_router
+app.include_router(native_ptb_redirect_router)
+
+
 
 @app.exception_handler(RequestValidationError)
 async def redact_json_bridge_validation(request: Request, exc: RequestValidationError):
