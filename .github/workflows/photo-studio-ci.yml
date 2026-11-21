@@ -73,6 +73,10 @@ jobs:
         working-directory: locket-backend
         run: node tests/test_ptb_hook_check.cjs
 
+      - name: Test PTB V7 two-host generate probe
+        working-directory: locket-backend
+        run: node tests/test_ptb_v7_generate_probe.cjs
+
       - name: Test experimental native PTB Shadowrocket redirect
         working-directory: locket-backend
         run: node tests/test_native_ptb_redirect.cjs
